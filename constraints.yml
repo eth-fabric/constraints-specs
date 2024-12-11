@@ -1,0 +1,107 @@
+openapi: 3.0.0
+info:
+  version: "0.1.0"
+  title: "Constraints API"
+  description: "API governing interaction between preconfers and gateways"
+  contact:
+    name: Jack McPherson
+    url: https://jmcph4.dev
+    email: jack@jmcph4.dev
+paths:
+  /constraints/v0/delegate:
+    post:
+      tags:
+        - Constraints API
+      summary: "Endpoint for proposer to delegate constraint submission rights to a Gateway"
+      description: "Endpoint for proposer to delegate constraint submission rights to a Gateway"
+      responses:
+        "200":
+          description: "OK"
+  /constraints/v0/constraints:
+    post:
+      tags:
+        - Constraints API
+      summary: "Endpoint for submitting a batch of signed constraints from either the proposer or gateway to the relay"
+      description: "Endpoint for submitting a batch of signed constraints from either the proposer or gateway to the relay"
+      responses:
+        "200":
+          description: "OK"
+    get:
+      tags:
+        - Constraints API
+      summary: "Returns all constraints for a given slot"
+      description: "Returns all constraints for a given slot"
+      parameters:
+        - name: slot
+          in: query
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: "OK"
+  /constraints/v0/header_with_proofs/{slot}/{parent_hash}/{pubkey}:
+    get:
+      tags:
+        - Constraints API
+      summary: "Endpoint for requesting a builder bid with constraint proofs"
+      description: "Endpoint for requesting a builder bid with constraint proofs"
+      parameters:
+        - name: slot
+          in: path
+          required: true
+          schema: 
+            type: integer
+            format: int64
+        - name: parent_hash
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pubkey
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "OK"
+  /constraints/v0/delegations:
+    get:
+      tags:
+        - Constraints API
+      summary: "Returns the active delegations for the proposer of this slot, if it exists"
+      description: "Returns the active delegations for the proposer of this slot, if it exists"
+      parameters:
+        - name: slot
+          in: query
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: "OK"
+  /constraints/v0/constraints_stream:
+    get:
+      tags:
+        - Constraints API
+      summary: "Returns an SSE stream of constraints"
+      description: "Returns an SSE stream of constraints"
+      parameters:
+        - name: slot
+          in: query
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: "OK"
+  /constraints/v0/blocks_with_proofs:
+    post:
+      tags:
+        - Constraints API
+      summary: "Endpoint for submitting blocks with inclusion proofs"
+      description: "Endpoint for submitting blocks with inclusion proofs"
+      responses:
+        "200":
+          description: "OK"
