@@ -94,26 +94,24 @@ class SignedDelegation(Container):
 
 # A delegation from a proposer to a BLS public key
 class Delegation(Container):
-    validator_pubkey: BLSPubkey
-    delegatee_pubkey: BLSPubkey 
-    slasher_address: Address
+    proposer: BLSPubkey
+    delegate: BLSPubkey 
+    slasher: Address
+    valid_until: Slot
     metadata: Bytes
-    
 ```
 
 - **Description**
     
-    For proposers to delegate preconfirmations to a gateway they must provide a signed delegate message. Delegation expires; this message is required for every proposed block. 
-       
-    The `metadata` will be made available in the slashing function. The purpose of the metadata is so the proposer has the flexibility to change parameters without needing to change the bytecode. The metadata format is flexible and up to the bytecode function to interpret. 
-    
-    Metadata example parameters:
-    
-    - Gas limit
-    - Blob limit
-    - ChainId
-    - Preconf Type (Execution, Inclusion, State lock)
+    A proposer can delegate preconfirmations rights by signing a `Delegate` message with their `proposer` BLS private key. A `SignedDelegation` binds the `proposer` public key to the `delegate` public key and a `slasher` contract until after the `valid_until` slot elapses. During this time, the `delegate` can submit constraints to the relay on behalf of the `proposer`.
 
+    - `proposer`: The BLS public key of the proposer who is delegating preconfirmation rights.
+    - `delegate`: The BLS public key of the gateway who is receiving preconfirmation rights.
+    - `slasher`: The address of a slasher contract containing a slashing function to penalize a proposer who has violated constraints (i.e., reneged on a preconf).
+    - `valid_until`: slot number (inclusive) that a `SignedDelegation` is considered valid until
+    - `metadata`: Additional opaque byte array reserved for and interpreted by the slashing function and/or the gateway (e.g., gas limit, blob limit, chain id, preconf type)
+
+    While the Constraints API aims to be unopinionated about how slasher contracts are implemented, it's assumed that `SignedDelegation` messages are part of the evidence used to slash a proposer.
 ---
 
 ### Endpoint: `/constraints/v0/constraints`
