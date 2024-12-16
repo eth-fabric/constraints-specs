@@ -29,13 +29,14 @@ Also known as the Commitments API
 
 | Term           | Description                                                                                                                                    |
 |----------------|------------------------------------------------------------------------------------------------------------------------------------------------|
-| Preconfer      | A proposer who registers to offer preconfirmations is a preconfer.  Any party the proposer delegates preconf authority to is also a preconfer. |
-| Gateway        | A party which has been delegated preconf authority by the proposer                                                                             |
-| Preconf Router | The component that provides an abstracted EVM RPC API endpoint for users to submit L2 transactions and get preconfirmations                    |
+| Preconfer      | A proposer who registers to offer preconfirmations is a preconfer. Any party the proposer delegates preconf authority to is also a preconfer.  |
+| Gateway        | A party which has been delegated preconf constraint and commitment submission authority by the proposer.                                       |
+| Builder        | A party specialized in constructing execution payloads and proving constraints are followed.                                                   |
+| Relay          | A trusted party that facilitates the exchange of execution payloads between Builders and Proposers and validating constraints are followed.    |
+| RPC Router     | The component that provides an abstracted EVM RPC API endpoint for users to submit L2 transactions and get preconfirmations.                   |
+
 
 # API Summary
-
----
 
 | **Namespace** | **Endpoint** | **Description** |
 | --- | --- | --- |
