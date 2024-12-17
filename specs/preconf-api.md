@@ -2,14 +2,14 @@
 
 ## Abstract
 
-A proposed generic API specification to support Ethereum and Layer 2 preconfirmations. The API is compatible with the existing PBS architecture and [builder-specs](https://github.com/ethereum/builder-specs). This specification allows proposers to offer preconfirmations to users either directly or by delegating the privilege to a Gateway.
+A proposed generic API specification to support Ethereum and Layer 2 preconfirmations. The API extends the existing PBS architecture and [builder-specs](https://github.com/ethereum/builder-specs). This specification allows proposers to offer preconfirmations to users either directly or by delegating the privilege to a Gateway.
 
 ## Motivation
 
 Ethereum’s 12 second block time may be restrictive for particular use cases and is especially inhibitive for L2s that rely on fast confirmations. One option is to reduce the block time. However, this is a very large lift and would likely require multiple hard forks. This alternative option extends the existing PBS architecture, which allows proposers or constraint delegates (Gateways) to offer transaction preconfirmations to users.
 
 
-### API Scope
+## API Scope
 
 **In Scope**
 
@@ -40,44 +40,23 @@ Also known as the Commitments API
 
 | **Namespace** | **Endpoint** | **Description** |
 | --- | --- | --- |
-| `constraints`  | `POST` /delegate | Endpoint for proposer to delegate constraint submission rights to a Gateway. |
-| `constraints` | `POST` /constraints | Endpoint for submitting a batch of signed constraints from either the proposer or gateway to the relay. |
-| `constraints` | `GET` /header_with_proofs | Endpoint for requesting a builder bid with constraint proofs. |
-| `constraints` | `GET` /delegations | Returns the active delegations for the proposer of this slot, if it exists. |
-| `constraints` | `GET` /constraints | Returns all constraints for a given slot. |
-| `constraints`  | `GET` /constraints_stream | Returns an SSE stream of constraints. |
-| `constraints`  | `POST` /blocks_with_proofs | Endpoint for submitting blocks with inclusion proofs. |
+| `constraints`   | `POST` /delegate           | Endpoint for Proposer to delegate preconfirmation rights, or more accurately, constraint submission rights to a Gateway. |
+| `constraints`   | `POST` /constraints        | Endpoint for Proposer or Gateway to submit a batch of signed constraints to the Relay. |
+| `constraints`   | `GET` /header_with_proofs  | Endpoint for Proposer to request a builder bid with proof of constraint validity. |
+| `constraints`   | `GET` /delegations         | Endpoint to retrieve the signed delegations for the proposer of a given slot, if it exists. |
+| `constraints`   | `GET` /constraints         | Endpoint to retrieve the signed constraints for a given slot. |
+| `constraints`   | `GET` /constraints_stream  | Endpoint to retrieve an SSE stream of signed constraints. |
+| `constraints`   | `POST` /blocks_with_proofs | Endpoint for Builder to submit a block with inclusion proofs to the Relay. |
 
 ---
-### Overview
 ![image.png](../img/preconf-api-diagram.png)
-
-# Constraints API: Builder
-
 ---
 
-## **Overview**
+# Constraints API Endpoints
 
-The Constraints API is the way for **proposers** to communicate with the **gateway** in the PBS pipeline. The constraints-API adds the following new responsibilities:
+### Endpoint: `/constraints/v0/relay/delegate`
 
-- Proposers should be able to delegate preconfirmation rights, or more accurately, constraint submission rights to a gateway
-- A proposer or gateway should be able to submit constraints through the builder API
-- Proposers should be able to get bids with proofs of constraint validity
-
-The Constraints API is also the way for block builders to communicate bids to relays in the PBS pipeline. New responsibilities:
-
-- Getter function for delegations and constraints in a slot.
-- Subscription to new constraints using Server Side Events (SSE).
-- Implement an updated block submission endpoint with support for inclusion proofs.
-
-## `Constraints` namespace
-
-This namespace defines endpoints that should be called by either the validator or a gateway.
-
-
-### Endpoint: `/constraints/v0/delegate`
-
-Endpoint for proposer to delegate constraint submission rights to a Gateway. 
+Endpoint for a Proposer to delegate constraint submission rights to a Gateway. 
 
 - Method: `POST`
 - Response: Empty
@@ -114,9 +93,9 @@ class Delegation(Container):
     While the Constraints API aims to be unopinionated about how slasher contracts are implemented, it's assumed that `SignedDelegation` messages are part of the evidence used to slash a proposer.
 ---
 
-### Endpoint: `/constraints/v0/constraints`
+### Endpoint: `/constraints/v0/relay/constraints`
 
-Endpoint for submitting a batch of constraints to the relay. The constraints are expected to be signed by a `delegate` BLS private key.
+Endpoint for submitting a batch of constraints to the relay. The constraints are expected to be signed by a `delegate` BLS private key, whose corresponding public key is specified in a `SignedDelegation` message.
 
 - Method: `POST`
 - Response: Empty
@@ -159,8 +138,9 @@ class Constraint(Container):
     - how to build a valid block given a `ConstraintsMessage`
     - how to generate proofs of constraint validity
     - how to verify proofs of constraint validity
+---
 
-### Endpoint: **`/constraints/header_with_proofs/{slot}/{parent_hash}/{pubkey}`**
+### Endpoint: **`/constraints/v0/relay/header_with_proofs/{slot}/{parent_hash}/{pubkey}`**
 
 Endpoint for requesting a builder bid with constraint proofs.
 
@@ -201,14 +181,28 @@ class ConstraintProofs(Container):
     ```python
     # commitmentType = 0x00
     class InclusionProof(Container):
-        transaction_hash: Bytes32
+        tx_hash: Bytes32
+        index: uint64
         merkle_hashes: List[Bytes32]
+    
+    # example inclusion proofs
+    proof_0 = InclusionProof(
+        tx_hash="0xcf8e...", index=7, merkle_hashes=["0xa7bc...", "0xd912...", ...]
+    ).ssz_encode()
 
-    # example proof for a single tx
+    proof_1 = InclusionProof(
+        tx_hash="0x9fbb...", index=9, merkle_hashes=["0xeeab...", "0x1a2c...", ...]
+    ).ssz_encode()
+
+    # example envelope for mulitple proofs
     proofs = ConstraintProofs(
-        commitmentTypes=[0x00],
-        payloads=[InclusionProof(transaction_hash="0xcf8e...", merkle_hashes=["0xa7bc...", "0xd912..."]).ssz_encode()]
+        commitmentTypes=[0x00, 0x00],
+        payloads=[
+            proof_0,
+            proof_1,
+        ],
     )
+
     ```
 
 - **Example Response**
@@ -243,19 +237,15 @@ class ConstraintProofs(Container):
                 "pubkey": "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a"
             },
             "proofs": {
-                "commitmentTypes": [4, 5],
+                "commitmentTypes": [0x00, 0x00],
                 "payloads": ["0x5097...", "0x932587..."]
             },
             "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
         }
     }
     ```
+---
     
-## Overview
-
-
-
-
 ### Endpoint: `/constraints/v0/delegations?slot={slot}`
 
 Return the active delegations for the proposer of this slot, if it exists.
