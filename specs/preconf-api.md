@@ -206,7 +206,7 @@ class ConstraintProofs(Container):
     ```
 
 - **Example Response**
-    ```python
+    ```json
     {
         "version": "deneb",
         "data": {
@@ -246,25 +246,31 @@ class ConstraintProofs(Container):
     ```
 ---
     
-### Endpoint: `/constraints/v0/delegations?slot={slot}`
+### Endpoint: `/constraints/v0/relay/delegations?slot={slot}`
 
 Return the active delegations for the proposer of this slot, if it exists.
 
-- Method: `GET`
-- Parameters:
-    - `slot: uint64`
-- Headers:
-    - `Content-Type: application/json`
-- Body: Empty
-- Response: JSON object of type `SignedDelegation[]`
+- **Method:** `GET`
+- **Response:** `SignedDelegation[]`
+- **Parameters:**
+    - `slot`: `string` (regex `[0-9]+`)
+- **Body:** Empty
 
-**Schema**
-
-```python
-TODO: Needs to be updated to support the changes in the /delegate call
-```
-
-- **Description**
+- **Example Response**
+    ```json
+    [
+        {
+            "message": {
+                "proposer": "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a",
+                "delegate": "0x84e47f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74b",
+                "slasher": "0xabcf8e0d4e9587369b2301d0790347320302cc09",
+                "valid_until": "12345",
+                "metadata": "0xe9587369b2301d0790347320302cc069b2301d0790347320302cc0943d5a1884560367e8208d920f2e9587369b2301de9587369b2301d0790347320302cc0"
+            },
+            "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
+        }
+    ]
+    ```
 
 ---
 
