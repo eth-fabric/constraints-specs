@@ -151,7 +151,7 @@ class Constraint(Container):
     - `commitmentType`: unsigned 64-bit number between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment
     - `payload`: opaque byte array whose interpretation is dependent on the `commitmentType`
 
-    Particularly each `Preconfirmation` would have a corresponding spec that defines:
+    Particularly each `commitmentType` would have a corresponding spec that defines:
     - a schema for a `Preconfirmation` and `SignedPreconfirmation` message
     - how a `Constraint.payload` is interpreted
     - how a `Constraint.payload` is created given a `SignedPreconfirmation`
@@ -174,26 +174,44 @@ Endpoint for requesting a builder bid with constraint proofs.
 
 **Schema**
 
-```jsx
+```python
 class VersionedSignedBuilderBidWithProofs:
     ... # All regular fields from VersionedSignedBuilderBid, additionally
-    proofs: InclusionProofs
+    proofs: ConstraintProofs
 
-# An SSZ Merkle Multiproof for proving inclusion against the transactions_root
-class InclusionProofs(Container):
-  transaction_hashes: List[Bytes32, MAX_CONSTRAINTS_PER_SLOT]
-  generalized_indexes: List[uint64, MAX_CONSTRAINTS_PER_SLOT]
-  merkle_hashes: List[List[Bytes32], MAX_CONSTRAINTS_PER_SLOT]
+class ConstraintProofs(Container):
+  commitmentTypes: List[uint64, MAX_CONSTRAINTS_PER_SLOT]
+  payloads: List[Bytes, MAX_CONSTRAINTS_PER_SLOT]
 ```
 
 - **Description**
     
-    `VersionedSignedBuilderBid` is from the [original specs](https://ethereum.github.io/builder-specs/#/Builder/getHeader).  `VersionedSignedBuilderBidWithProofs` just adds a field for proofs of inclusion. Note that `InclusionProofs` is a Merkle multiproof, as defined in the [consensus specs](https://github.com/ethereum/consensus-specs/blob/dev/ssz/merkle-proofs.md#merkle-multiproofs).
-    
-    When serializing, the `proofs` field must be present in `data`, at the same level of `signature` and `message`. See the example below.
-    
+    The `VersionedSignedBuilderBidWithProofs` schema extends `VersionedSignedBuilderBid` from the [original builder specs](https://ethereum.github.io/builder-specs/#/Builder/getHeader) to include proofs of constraint validity. Without leaking the block's contents, a Proposer can verify that the block satisfies the constraints by checking the `proofs` against the block header. To support a wide range of constraint types with different proving requirements, `ConstraintProofs` is left open-ended to allow for future flexibility.
+
+    - `commitmentTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogenous)
+    - `payloads`: list of opaque byte arrays whose interpretation is dependent on the `commitmentTypes`
+
+- **Requirements**: 
+    - each `commitmentType` has a spec that defines how builders can generate `proofs` for their block
+    - each `commitmentType` has a spec that defines how relays and proposers can verify `proofs`
+    - When serializing, the `proofs` field must be present in `data`, at the same level of `signature` and `message`. See the example below.
+    - The length of `commitmentTypes` and `payloads` must be the same
+
+- **Example Payload**
+    ```python
+    # commitmentType = 0x00
+    class InclusionProof(Container):
+        transaction_hash: Bytes32
+        merkle_hashes: List[Bytes32]
+
+    # example proof for a single tx
+    proofs = ConstraintProofs(
+        commitmentTypes=[0x00],
+        payloads=[InclusionProof(transaction_hash="0xcf8e...", merkle_hashes=["0xa7bc...", "0xd912..."]).ssz_encode()]
+    )
+    ```
+
 - **Example Response**
-    
     ```python
     {
         "version": "deneb",
@@ -225,9 +243,8 @@ class InclusionProofs(Container):
                 "pubkey": "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a"
             },
             "proofs": {
-                "transaction_hashes": ["0x1234...", "0x456..."],
-                "generalized_indexes": [4, 5],
-                "merkle_hashes": ["0x5097...", "0x932587..."]
+                "commitmentTypes": [4, 5],
+                "payloads": ["0x5097...", "0x932587..."]
             },
             "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
         }
