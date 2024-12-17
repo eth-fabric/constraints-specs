@@ -248,7 +248,7 @@ class ConstraintProofs(Container):
     
 ### Endpoint: `/constraints/v0/relay/delegations?slot={slot}`
 
-Return the active delegations for the proposer of this slot, if it exists.
+Return the active delegations for the proposer of this slot, if they exist.
 
 - **Method:** `GET`
 - **Response:** `SignedDelegation[]`
@@ -272,37 +272,48 @@ Return the active delegations for the proposer of this slot, if it exists.
     ]
     ```
 
+- **Description**
+
+    The Relay should only return signed delegations that were signed by the proposer.
+
 ---
 
-### Endpoint: `/constraints/v0/constraints?slot={slot}`
+### Endpoint: `/constraints/v0/relay/constraints?slot={slot}`
 
-Returns all constraints for a given slot.
+Returns all signed constraints for a given slot, if they exist.
 
-- Method: `GET`
-- Parameters:
-    - `slot: uint64`
-- Headers:
-    - `Content-Type: application/json`
-- Body: Empty
-- Response: JSON object of type `SignedConstraints[]`
+- **Method:** `GET`
+- **Response:** `SignedConstraints[]`
+- **Parameters:**
+    - `slot`: `string` (regex `[0-9]+`)
+- **Body:** Empty
 
-**Schema**
-
-```python
-# TODO: Needs to be updated to support the changes in the builder/delegate call
-
-class SignedConstraints(Container):
-    message: ConstraintsMessage
-    signature: BLSSignature
-
-class ConstraintsMessage(Container):
-    pubkey: uint64,
-    slot: uint64
-    top: boolean,
-    transactions: List[Bytes, MAX_CONSTRAINTS_PER_SLOT]
-```
+- **Example Response**
+    ```json
+    [
+        {
+            "message": {
+                "delegate": "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a",
+                "slot": "12345",
+                "constraints": [
+                    {
+                        "commitmentType": "0x00",
+                        "payload": "0x301d0790347320302cc0943d5a1884560367e8208d920f2e9587369b2301de9587369b2301d0790347320302cc0"
+                    },
+                    {
+                        "commitmentType": "0x01",
+                        "payload": "0x367e8208d920f2e9587369b2301de9587369b2301d0790347320302cc0301d0790347320302cc0943d5a1884560367e8208d920f2e958"
+                    }
+                ]
+            },
+            "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
+        }
+    ]
+    ```
 
 - **Description**
+
+    The Relay should only return signed constraints that were signed by the proposer or a gateway that was delegated to by the proposer.
 
 ---
 
