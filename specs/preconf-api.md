@@ -116,17 +116,17 @@ class Delegation(Container):
 
 ### Endpoint: `/constraints/v0/constraints`
 
-Endpoint for submitting a batch of signed constraints from either the proposer or gateway to the relay.
+Endpoint for submitting a batch of constraints to the relay. The constraints are expected to be signed by a `delegate` BLS private key.
 
 - Method: `POST`
 - Response: Empty
 - Headers:
     - `Content-Type: application/json`
-- Body: JSON object of type `SignedDelegation[]`
+- Body: JSON object of type `SignedConstraints[]`
 
 **Schema**
 
-```jsx
+```python
 # A signed "bundle" of constraints.
 class SignedConstraints(Container):
     message: ConstraintsMessage
@@ -134,29 +134,31 @@ class SignedConstraints(Container):
 
 # A "bundle" of constraints for a specific slot.
 class ConstraintsMessage(Container):
-    pubkey: BLSPubkey,
+    delegate: BLSPubkey
     slot: uint64
     contraints: List[Constraint]
 
 # A contraint for a transactions
 class Constraint(Container):
-		transaction: Bytes
-		slasher_address: Address
-		metadata: Bytes
+    commitmentType: uint64
+    payload: Bytes
 ```
 
 - **Description**
     
-    For each preconfirmation proposers and gateways provide, they will need to create a matching constraint. These constraints need to be posted to the relay. 
+    For each `Preconfirmation` the delegate signs, they will need to create a matching `Constraint`. Collectively, a `SignedConstraints` message is posted to the relay. 
     
-    **Note**: Ordering of `contraints[]` does not need to be explicit, though it can be enforced in the bytecode.
-    
-    The `metadata` will be made available in the slashing function. This is separate to the delegate `metadata` and it’s purpose is to offer transactions-specific commitment parameters because the bytecode is immutable.  The metadata format is flexible and up to the bytecode function to interpret. 
-    
-    metadata example parameters:
-    
-    - Index
-    - Preconf type
+    - `commitmentType`: unsigned 64-bit number between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment
+    - `payload`: opaque byte array whose interpretation is dependent on the `commitmentType`
+
+    Particularly each `Preconfirmation` would have a corresponding spec that defines:
+    - a schema for a `Preconfirmation` and `SignedPreconfirmation` message
+    - how a `Constraint.payload` is interpreted
+    - how a `Constraint.payload` is created given a `SignedPreconfirmation`
+    - the ordering of `constraints[]`
+    - how to build a valid block given a `ConstraintsMessage`
+    - how to generate proofs of constraint validity
+    - how to verify proofs of constraint validity
 
 ### Endpoint: **`/constraints/header_with_proofs/{slot}/{parent_hash}/{pubkey}`**
 
