@@ -317,36 +317,48 @@ Returns all signed constraints for a given slot, if they exist.
 
 ---
 
-### Endpoint: `/constraints/v0/constraints_stream?slot={slot}`
+### Endpoint: `/constraints/v0/relay/constraints_stream?slot={slot}`
 
-Returns an SSE stream of constraints.
+Returns a stream of constraints via Server-Sent Events (SSE).
 
-- Method: `GET`
-- Parameters: Empty
-- Headers:
-    - `Content-Type: application/json`
+- **Method:** `GET`
+- **Response:**  Server-sent events containing `SignedConstraints[]` objects
+- **Parameters:**
+    - `slot`: `string` (regex `[0-9]+`)
+- **Body:** Empty
+- **Headers**:
+    - `Content-Type: text/event-stream`
+    - `Cache-Control: no-cache`
     - `Connection: keep-alive`
-- Body: Empty
-- Response: stream of JSON objects of type `SignedConstraints[]`
 
-**Schema**
+- **Example Response**
+    ```json
+    event: json
+    data: [
+        {
+            "message": {
+                "delegate": "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a",
+                "slot": "12345",
+                "constraints": [
+                    {
+                        "commitmentType": "0x00",
+                        "payload": "0x301d0790347320302cc0943d5a1884560367e8208d920f2e9587369b2301de9587369b2301d0790347320302cc0"
+                    },
+                    {
+                        "commitmentType": "0x01",
+                        "payload": "0x367e8208d920f2e9587369b2301de9587369b2301d0790347320302cc0301d0790347320302cc0943d5a1884560367e8208d920f2e958"
+                    }
+                ]
+            },
+            "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
+        }
+    ]
 
-```python
-# TODO: Needs to be updated to support the changes in the builder/delegate call
-
-class SignedConstraints(Container):
-    message: ConstraintsMessage
-    signature: BLSSignature
-
-class ConstraintsMessage(Container):
-    pubkey: BLSPubkey,
-    slot: uint64
-    top: boolean,
-    transactions: List[Bytes, MAX_CONSTRAINTS_PER_SLOT]
-```
-
+    ```
 - **Description**
 
+    This endpoint is a streaming endpoint meant to reduce round-trip latency via SSE, allowing Relays to push new constraints to Builders in realtime.
+    The Relay should only return signed constraints that were signed by the proposer or a gateway that was delegated to by the proposer. 
 ---
 
 ### Endpoint: `/constraints/v0/blocks_with_proofs?cancellations={cancellations}`
