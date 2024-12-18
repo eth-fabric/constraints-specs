@@ -58,27 +58,27 @@ Also known as the Commitments API
 
 Endpoint for a Proposer to delegate constraint submission rights to a Gateway. 
 
-- Method: `POST`
-- Response: Empty
-- Headers:
+- **Method:** `POST`
+- **Response:** Empty
+- **Headers:**
     - `Content-Type: application/json`
+- **Body:** JSON object of type `SignedDelegation`
 
-**Schema**
+- **Schema**
+    ```python
+    # A signed delegation
+    class SignedDelegation(Container):
+        message: Delegation
+        signature: BLSSignature
 
-```python
-# A signed delegation
-class SignedDelegation(Container):
-    message: Delegation
-    signature: BLSSignature
-
-# A delegation from a proposer to a BLS public key
-class Delegation(Container):
-    proposer: BLSPubkey
-    delegate: BLSPubkey 
-    slasher: Address
-    valid_until: Slot
-    metadata: Bytes
-```
+    # A delegation from a proposer to a BLS public key
+    class Delegation(Container):
+        proposer: BLSPubkey
+        delegate: BLSPubkey 
+        slasher: Address
+        valid_until: Slot
+        metadata: Bytes
+    ```
 
 - **Description**
     
@@ -129,31 +129,31 @@ Return the active delegations for the proposer of this slot, if they exist.
 
 Endpoint for submitting a batch of constraints to the relay. The constraints are expected to be signed by a `delegate` BLS private key, whose corresponding public key is specified in a `SignedDelegation` message.
 
-- Method: `POST`
-- Response: Empty
-- Headers:
+- **Method:** `POST`
+- **Response:** Empty
+- **Headers:**
     - `Content-Type: application/json`
-- Body: JSON object of type `SignedConstraints[]`
+- **Body:** JSON object of type `SignedConstraints[]`
 
-**Schema**
+- **Schema**
 
-```python
-# A signed "bundle" of constraints.
-class SignedConstraints(Container):
-    message: ConstraintsMessage
-    signature: BLSSignature
+    ```python
+    # A signed "bundle" of constraints.
+    class SignedConstraints(Container):
+        message: ConstraintsMessage
+        signature: BLSSignature
 
-# A "bundle" of constraints for a specific slot.
-class ConstraintsMessage(Container):
-    delegate: BLSPubkey
-    slot: uint64
-    contraints: List[Constraint]
+    # A "bundle" of constraints for a specific slot.
+    class ConstraintsMessage(Container):
+        delegate: BLSPubkey
+        slot: uint64
+        contraints: List[Constraint]
 
-# A contraint for a transactions
-class Constraint(Container):
-    commitmentType: uint64
-    payload: Bytes
-```
+    # A contraint for a transactions
+    class Constraint(Container):
+        commitmentType: uint64
+        payload: Bytes
+    ```
 
 - **Description**
     
@@ -259,24 +259,24 @@ Returns a stream of constraints via Server-Sent Events (SSE).
 
 Endpoint for submitting blocks with proofs of constraint validity to a Relay.
 
-- Method: `POST`
-- Parameters: `cancellations: bool` (query)
-- Headers:
+- **Method:** `POST`
+- **Parameters:**
+    - `cancellations`: `bool` (query)
+- **Headers:**
     - `Content-Type: application/json`
-- Body: JSON object of type `VersionedSubmitBlockRequestWithProofs`
-- Response: Empty
+- **Body:** JSON object of type `VersionedSubmitBlockRequestWithProofs`
+- **Response:** Empty
 
-**Schema**
+- **Schema**
+    ```python
+    class VersionedSubmitBlockRequestWithProofs:
+        ... # All regular fields from VersionedSubmitBlockRequest, additionally
+        proofs: ConstraintProofs
 
-```python
-class VersionedSubmitBlockRequestWithProofs:
-    ... # All regular fields from VersionedSubmitBlockRequest, additionally
-    proofs: ConstraintProofs
-
-class ConstraintProofs(Container):
-    commitmentTypes: List[uint64, MAX_CONSTRAINTS_PER_SLOT]
-    payloads: List[Bytes, MAX_CONSTRAINTS_PER_SLOT]
-```
+    class ConstraintProofs(Container):
+        commitmentTypes: List[uint64, MAX_CONSTRAINTS_PER_SLOT]
+        payloads: List[Bytes, MAX_CONSTRAINTS_PER_SLOT]
+    ```
 
 - **Description**
     
@@ -361,17 +361,16 @@ Endpoint for requesting a builder bid with constraint proofs from a Relay.
     - `pubkey`: `string` (regex `0x[a-fA-F0-9]+`)
 - **Body:** Empty
 
-**Schema**
+- **Schema**
+    ```python
+    class VersionedSignedBuilderBidWithProofs:
+        ... # All regular fields from VersionedSignedBuilderBid, additionally
+        proofs: ConstraintProofs
 
-```python
-class VersionedSignedBuilderBidWithProofs:
-    ... # All regular fields from VersionedSignedBuilderBid, additionally
-    proofs: ConstraintProofs
-
-class ConstraintProofs(Container):
-    commitmentTypes: List[uint64, MAX_CONSTRAINTS_PER_SLOT]
-    payloads: List[Bytes, MAX_CONSTRAINTS_PER_SLOT]
-```
+    class ConstraintProofs(Container):
+        commitmentTypes: List[uint64, MAX_CONSTRAINTS_PER_SLOT]
+        payloads: List[Bytes, MAX_CONSTRAINTS_PER_SLOT]
+    ```
 
 - **Description**
     
