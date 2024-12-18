@@ -452,3 +452,71 @@ Endpoint for requesting a builder bid with constraint proofs from a Relay.
     }
     ```
 ---
+
+# Annotated Sequence Diagram
+```mermaid
+sequenceDiagram
+autonumber
+    participant Proposer
+    participant Builder
+    participant Relay
+    participant Gateway
+    participant RPC Router
+    participant Wallet
+    participant User
+    
+    Proposer->>Relay: POST /delegate
+    Builder->>Relay: GET /delegate
+    RPC Router->>Relay: GET /delegate
+    User->>Wallet: POST /eth_sendTransaction
+    Wallet->>RPC Router: POST /eth_sendTransaction
+    RPC Router->>Gateway: POST /eth_sendTransaction
+    Gateway->>Gateway: Process transaction
+    Gateway->>RPC Router: SignedCommitment (preconf)
+    RPC Router->>Wallet: SignedCommitment (preconf)
+    Wallet->>User: SignedCommitment (preconf)
+    Loop for each SignedCommitment
+        Gateway->>Gateway: Create Constraint
+    end
+    Gateway->>Relay: POST /constraints
+    Builder->>Relay: GET /constraints_stream
+    Builder->>Builder: Build block
+
+    Loop for each Constraint
+        Builder->>Builder: Generate proof
+    end
+    Builder->>Relay: POST /blocks_with_proofs
+    Relay->>Relay: PBS Auction
+    Proposer->>Relay: GET /constraints
+    Proposer->>Relay: GET /header_with_proofs
+    Proposer->>Proposer: Verify proof[s]
+    Proposer<<-->>Relay: ...
+    Proposer->>Proposer: Propose block
+    Note over User: Receive L1 confirmation
+```
+
+- (1) Proposer signs `Delegation` with their validator BLS key
+
+- (2-3) Gateways and RPC Routers fetch `SignedDelegation` messages from Relay
+
+- (4-6) User sends a transaction via their Wallet which is routed to the correct Gateway
+
+- (7-10) Gateway processes transaction and returns `SignedCommitment` (preconf) to User
+
+- (11) Gateway creates `Constraint` for each `SignedCommitment`
+
+- (12) Gateway sends `SignedConstraints` to Relay
+
+- (13) Builder subscribes to `SignedConstraints` from Relay
+
+- (14-15) Builder builds block and proofs of constraint validity
+
+- (16) Builder sends `VersionedSubmitBlockRequestWithProofs` to Relay
+
+- (17) Relay verifies proofs and performs standard PBS auction
+
+- (18-20) Proposer verifies block follows constraints by checking proofs against the block header
+
+- (21) Continuation of standard PBS protocol
+
+- (22) Proposer proposes block to L1, and User receives L1 confirmation  
