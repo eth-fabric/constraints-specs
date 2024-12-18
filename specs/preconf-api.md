@@ -38,15 +38,15 @@ Also known as the Commitments API
 
 # API Summary
 
-| **Namespace** | **Endpoint** | **Description** |
-| --- | --- | --- |
-| `constraints`   | `POST` [/delegate](./preconf-api.md#endpoint-constraintsv0relaydelegate)           | Endpoint for Proposer to delegate preconfirmation rights, or more accurately, constraint submission rights to a Gateway. |
-| `constraints`   | `GET` [/delegations](./preconf-api.md#endpoint-constraintsv0relaydelegationsslotslot)         | Endpoint to retrieve the signed delegations for the proposer of a given slot, if it exists. |
-| `constraints`   | `POST` [/constraints](./preconf-api.md#endpoint-constraintsv0relayconstraints)        | Endpoint for Proposer or Gateway to submit a batch of signed constraints to the Relay. |
-| `constraints`   | `GET` [/constraints](./preconf-api.md#endpoint-constraintsv0relayconstraintsslotslot)         | Endpoint to retrieve the signed constraints for a given slot. |
-| `constraints`   | `GET` [/constraints_stream](./preconf-api.md#endpoint-constraintsv0relayconstraints_streamslotslot)  | Endpoint to retrieve an SSE stream of signed constraints. |
-| `constraints`   | `POST` [/blocks_with_proofs](./preconf-api.md#endpoint-constraintsv0relayblocks_with_proofscancellationscancellations) | Endpoint for Builder to submit a block with proofs of constraint validity to the Relay. |
-| `constraints`   | `GET` [/header_with_proofs](./preconf-api.md#endpoint-constraintsv0relayheader_with_proofsslotparent_hashpubkey)  | Endpoint for Proposer to request a builder bid with proof of constraint validity. |
+| **Namespace** | **Method** | **Endpoint** | **Description** |
+| --- | --- | --- | --- |
+| `constraints`   | `POST` | [/constraints/v0/relay/delegate](./preconf-api.md#endpoint-constraintsv0relaydelegate)           | Endpoint for Proposer to delegate preconfirmation rights, or more accurately, constraint submission rights to a Gateway. |
+| `constraints`   | `GET` | [/constraints/v0/relay/delegations](./preconf-api.md#endpoint-constraintsv0relaydelegationsslotslot)         | Endpoint to retrieve the signed delegations for the proposer of a given slot, if it exists. |
+| `constraints`   | `POST` | [/constraints/v0/relay/constraints](./preconf-api.md#endpoint-constraintsv0relayconstraints)        | Endpoint for Proposer or Gateway to submit a batch of signed constraints to the Relay. |
+| `constraints`   | `GET` | [/constraints/v0/relay/constraints](./preconf-api.md#endpoint-constraintsv0relayconstraintsslotslot)         | Endpoint to retrieve the signed constraints for a given slot. |
+| `constraints`   | `GET` | [/constraints/v0/relay/constraints_stream](./preconf-api.md#endpoint-constraintsv0relayconstraints_streamslotslot)  | Endpoint to retrieve an SSE stream of signed constraints. |
+| `constraints`   | `POST` | [/constraints/v0/relay/blocks_with_proofs](./preconf-api.md#endpoint-constraintsv0relayblocks_with_proofscancellationscancellations) | Endpoint for Builder to submit a block with proofs of constraint validity to the Relay. |
+| `constraints`   | `GET` | [/constraints/v0/relay/header_with_proofs](./preconf-api.md#endpoint-constraintsv0relayheader_with_proofsslotparent_hashpubkey)  | Endpoint for Proposer to request a builder bid with proof of constraint validity. |
 
 ---
 ![image.png](../img/preconf-api-diagram.png)
