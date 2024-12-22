@@ -20,7 +20,7 @@ Ethereum’s 12 second block time may be restrictive for particular use cases an
 Also known as the Constraints API
 
 **Out of Scope**
-- Any interaction between thrid parties (Users, RPC Router, etc) and the Gatway.
+- Any interaction between third parties (Users, RPC Router, etc) and the Gateway.
 - Commitments from Gateways to third parties
 
 Also known as the Commitments API
