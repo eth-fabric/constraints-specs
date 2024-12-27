@@ -238,3 +238,18 @@ components:
       required:
         - commitmentType
         - payload
+    ConstraintProofs:
+      type: object
+      properties:
+        commitmentTypes:
+          type: array
+          items:
+            type: integer
+            format: uint64
+          maxItems: MAX_CONSTRAINTS_PER_SLOT
+        payloads:
+          type: array
+          items:
+            type: string
+            format: byte
+          maxItems: MAX_CONSTRAINTS_PER_SLOT
