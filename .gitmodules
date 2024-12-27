@@ -1,9 +1,9 @@
 [submodule "beacon-apis"]
 	path = beacon-apis
-	url = git@github.com:ethereum/beacon-apis.git
+	url = https://github.com/ethereum/beacon-APIs.git
 [submodule "relay-specs"]
 	path = relay-specs
-	url = git@github.com:flashbots/relay-specs.git
+	url = https://github.com/flashbots/relay-specs.git
 [submodule "builder-specs"]
 	path = builder-specs
-	url = git@github.com:ethereum/builder-specs.git
+	url = https://github.com/ethereum/builder-specs.git
