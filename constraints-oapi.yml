@@ -158,6 +158,17 @@ While the Constraints API aims to be unopinionated about how slasher contracts a
       responses:
         "200":
           description: "OK"
+          content:
+              application/json:
+                  schema:
+                      type: object
+                      properties:
+                          event:
+                              type: string
+                          data:
+                              type: array
+                              items:
+                                  $ref: '#/components/schemas/SignedConstraints'
   /constraints/v0/blocks_with_proofs:
     post:
       tags:
@@ -327,5 +338,4 @@ components:
         - $ref: '#/components/schemas/Bellatrix.SignedBuilderBidWithProofs'
         - $ref: '#/components/schemas/Capella.SignedBuilderBidWithProofs'
         - $ref: '#/components/schemas/Deneb.SignedBuilderBidWithProofs'
-
 
