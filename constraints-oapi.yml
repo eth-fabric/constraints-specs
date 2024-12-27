@@ -10,6 +10,7 @@ info:
 paths:
   /constraints/v0/relay/delegate:
     post:
+      operationId: "postDelegate"
       tags:
         - Constraints API
       summary: "Endpoint for Proposer to delegate preconfirmation rights, or more accurately, constraint submission rights to a Gateway"
@@ -40,6 +41,7 @@ While the Constraints API aims to be unopinionated about how slasher contracts a
           content: {}
   /constraints/v0/relay/constraints:
     post:
+      operationId: "postConstraints"
       tags:
         - Constraints API
       summary: "Endpoint for Proposer or Gateway to submit a batch of signed constraints to the Relay"
@@ -80,6 +82,7 @@ While the Constraints API aims to be unopinionated about how slasher contracts a
               description: "OK"
               content: {}
     get:
+      operationId: "getConstraints"
       tags:
         - Constraints API
       summary: "Endpoint to retrieve the signed constraints for a given slot"
@@ -100,6 +103,7 @@ While the Constraints API aims to be unopinionated about how slasher contracts a
                             $ref: '#/components/schemas/SignedConstraints'
   /constraints/v0/relay/header_with_proofs/{slot}/{parent_hash}/{pubkey}:
     get:
+      operationId: "getHeaderWithProofs"
       tags:
         - Constraints API
       summary: "Endpoint for Proposer to request a builder bid with proof of constraint validity"
@@ -145,6 +149,7 @@ Requirements:
                   $ref: '#/components/schemas/VersionedSignedBuilderBidWithProofs'
   /constraints/v0/relay/delegations:
     get:
+      operationId: "getDelegations"
       tags:
         - Constraints API
       summary: "Endpoint to retrieve the signed delegations for the proposer of a given slot, if it exists."
@@ -166,6 +171,7 @@ Requirements:
                           $ref: '#/components/schemas/SignedDelegation'
   /constraints/v0/relay/constraints_stream:
     get:
+      operationId: "getConstraintsStream"
       tags:
         - Constraints API
       summary: "Endpoint to retrieve an SSE stream of signed constraints"
@@ -191,6 +197,7 @@ Requirements:
                                   $ref: '#/components/schemas/SignedConstraints'
   /constraints/v0/relay/blocks_with_proofs:
     post:
+      operationId: "postBlocksWithProofs"
       tags:
         - Constraints API
       summary: "Endpoint for Builder to submit a block with proofs of constraint validity to the Relay"
