@@ -88,8 +88,7 @@ While the Constraints API aims to be unopinionated about how slasher contracts a
         - name: slot
           in: query
           schema:
-            type: integer
-            format: int64
+              $ref: "../beacon-apis/types/primitive.yaml#/Uint64"
       responses:
         "200":
           description: "OK"
@@ -110,8 +109,7 @@ While the Constraints API aims to be unopinionated about how slasher contracts a
           in: path
           required: true
           schema: 
-            type: integer
-            format: int64
+              $ref: "../beacon-apis/types/primitive.yaml#/Uint64"
         - name: parent_hash
           in: path
           required: true
@@ -156,8 +154,7 @@ While the Constraints API aims to be unopinionated about how slasher contracts a
         - name: slot
           in: query
           schema:
-            type: integer
-            format: int64
+              $ref: "../beacon-apis/types/primitive.yaml#/Uint64"
       responses:
         "200":
           description: "OK"
@@ -225,8 +222,7 @@ components:
           type: string
           description: BLS public key
         slot:
-          type: integer
-          description: Slot
+            $ref: "../beacon-apis/types/primitive.yaml#/Uint64"
         contraints:
           type: array
           items:
