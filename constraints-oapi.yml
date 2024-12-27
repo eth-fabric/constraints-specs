@@ -175,8 +175,7 @@ components:
         message:
           $ref: '#/components/schemas/Delegation'
         signature:
-          type: string
-          description: BLS signature
+            $ref: "../beacon-apis/types/primitive.yaml#/Signature"
       required:
         - message
         - signature
@@ -184,11 +183,9 @@ components:
       type: object
       properties:
         proposer:
-          type: string
-          description: BLS public key
+            $ref: "../beacon-apis/types/primitive.yaml#/Pubkey"
         delegate:
-          type: string
-          description: BLS public key
+            $ref: "../beacon-apis/types/primitive.yaml#/Pubkey"
         slasher:
           type: string
           description: Ethereum address
@@ -210,8 +207,7 @@ components:
         message:
           $ref: '#/components/schemas/ConstraintsMessage'
         signature:
-          type: string
-          description: BLS signature
+            $ref: "../beacon-apis/types/primitive.yaml#/Signature"
       required:
         - message
         - signature
@@ -219,8 +215,7 @@ components:
       type: object
       properties:
         delegate:
-          type: string
-          description: BLS public key
+            $ref: "../beacon-apis/types/primitive.yaml#/Pubkey"
         slot:
             $ref: "../beacon-apis/types/primitive.yaml#/Uint64"
         contraints:
