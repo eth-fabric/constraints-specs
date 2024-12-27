@@ -83,7 +83,7 @@ While the Constraints API aims to be unopinionated about how slasher contracts a
       tags:
         - Constraints API
       summary: "Endpoint to retrieve the signed constraints for a given slot"
-      description: "TODO"
+      description: "The Relay should only return signed constraints that were signed by the proposer or a gateway that was delegated to by the proposer."
       parameters:
         - name: slot
           in: query
@@ -93,6 +93,12 @@ While the Constraints API aims to be unopinionated about how slasher contracts a
       responses:
         "200":
           description: "OK"
+          content:
+                application/json:
+                    schema:
+                        type: array
+                        items:
+                            $ref: '#/components/schemas/SignedConstraints'
   /constraints/v0/relay/header_with_proofs/{slot}/{parent_hash}/{pubkey}:
     get:
       tags:
