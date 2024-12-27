@@ -43,10 +43,42 @@ While the Constraints API aims to be unopinionated about how slasher contracts a
       tags:
         - Constraints API
       summary: "Endpoint for Proposer or Gateway to submit a batch of signed constraints to the Relay"
-      description: "TODO"
-      responses:
-        "200":
-          description: "OK"
+      description: "Endpoint for submitting a batch of constraints to the relay. The constraints are expected to be signed by a `delegate` BLS private key, whose corresponding public key is specified in a `SignedDelegation` message.
+
+      For each `Preconfirmation` the delegate signs, they will need to create a matching `Constraint`. Collectively, a `SignedConstraints` message is posted to the Relay.
+
+    - `commitmentType`: unsigned 64-bit number between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment
+
+    - `payload`: opaque byte array whose interpretation is dependent on the `commitmentType`
+
+    Particularly each `commitmentType` would have a corresponding specification that defines:
+
+    - A schema for a `Preconfirmation` and `SignedPreconfirmation` message
+
+    - How a `Constraint.payload` is interpreted
+
+    - How a `Constraint.payload` is created given a `SignedPreconfirmation`
+
+    - The ordering of `Constraints[]`
+
+    - How to build a valid block given a `ConstraintsMessage`
+
+    - How to generate proofs of constraint validity
+      
+    - how to verify proofs of constraint validity
+      "
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: array
+                        items:
+                            $ref: '#/components/schemas/SignedConstraints'
+        responses:
+            "200":
+              description: "OK"
+              content: {}
     get:
       tags:
         - Constraints API
@@ -169,3 +201,43 @@ components:
         - slasher
         - valid_until
         - metadata
+    SignedConstraints:
+      type: object
+      properties:
+        message:
+          $ref: '#/components/schemas/ConstraintsMessage'
+        signature:
+          type: string
+          description: BLS signature
+      required:
+        - message
+        - signature
+    ConstraintsMessage:
+      type: object
+      properties:
+        delegate:
+          type: string
+          description: BLS public key
+        slot:
+          type: integer
+          description: Slot
+        contraints:
+          type: array
+          items:
+            $ref: '#/components/schemas/Constraint'
+      required:
+        - delegate
+        - slot
+        - contraints
+    Constraint:
+      type: object
+      properties:
+        commitmentType:
+          type: integer
+          description: Commitment type
+        payload:
+          type: string
+          description: Arbitrary bytes
+      required:
+        - commitmentType
+        - payload
