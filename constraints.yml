@@ -33,38 +33,7 @@ While the Constraints API aims to be unopinionated about how slasher contracts a
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                message:
-                  type: object
-                  properties:
-                    proposer:
-                      type: string
-                      description: BLS public key
-                    delegate:
-                      type: string
-                      description: BLS public key
-                    slasher:
-                      type: string
-                      description: Ethereum address
-                    valid_until:
-                      type: integer
-                      description: Slot
-                    metadata:
-                      type: string
-                      description: Arbitrary bytes
-                  required:
-                    - proposer
-                    - delegate
-                    - slasher
-                    - valid_until
-                    - metadata
-                signature:
-                  type: string
-                  description: BLS signature
-              required:
-                - message
-                - signature
+                $ref: '#/components/schemas/SignedDelegation'
       responses:
         "200":
           description: "OK"
@@ -123,7 +92,7 @@ While the Constraints API aims to be unopinionated about how slasher contracts a
       tags:
         - Constraints API
       summary: "Endpoint to retrieve the signed delegations for the proposer of a given slot, if it exists."
-      description: "TODO"
+      description: "Return the active delegations for the proposer of this slot, if they exist. The Relay should only return signed delegations that were signed by the proposer."
       parameters:
         - name: slot
           in: query
@@ -133,6 +102,12 @@ While the Constraints API aims to be unopinionated about how slasher contracts a
       responses:
         "200":
           description: "OK"
+          content:
+              application/json:
+                  schema:
+                      type: array
+                      items:
+                          $ref: '#/components/schemas/SignedDelegation'
   /constraints/v0/relay/constraints_stream:
     get:
       tags:
@@ -157,3 +132,40 @@ While the Constraints API aims to be unopinionated about how slasher contracts a
       responses:
         "200":
           description: "OK"
+components:
+  schemas:
+    SignedDelegation:
+      type: object
+      properties:
+        message:
+          $ref: '#/components/schemas/Delegation'
+        signature:
+          type: string
+          description: BLS signature
+      required:
+        - message
+        - signature
+    Delegation:
+      type: object
+      properties:
+        proposer:
+          type: string
+          description: BLS public key
+        delegate:
+          type: string
+          description: BLS public key
+        slasher:
+          type: string
+          description: Ethereum address
+        valid_until:
+          type: integer
+          description: Slot
+        metadata:
+          type: string
+          description: Arbitrary bytes
+      required:
+        - proposer
+        - delegate
+        - slasher
+        - valid_until
+        - metadata
