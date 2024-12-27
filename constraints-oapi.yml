@@ -253,3 +253,46 @@ components:
             type: string
             format: byte
           maxItems: MAX_CONSTRAINTS_PER_SLOT
+    Bellatrix.SubmitBlockRequest:
+      $ref: "../relay-specs/types/bellatrix/requests.yaml#/Bellatrix/SubmitBlockRequest"
+    Capella.SubmitBlockRequest:
+      $ref: "../relay-specs/types/capella/requests.yaml#/Capella/SubmitBlockRequest"
+    Deneb.SubmitBlockRequest:
+      $ref: "../relay-specs/types/deneb/requests.yaml#/Deneb/SubmitBlockRequest"
+    Electra.SubmitBlockRequest:
+      $ref: "../relay-specs/types/electra/requests.yaml#/Electra/SubmitBlockRequest"
+    Bellatrix.SubmitBlockRequestWithProofs:
+      allOf:
+        - $ref: "../relay-specs/types/bellatrix/requests.yaml#/Bellatrix/SubmitBlockRequest"
+        - type: object
+          properties:
+            proofs:
+                $ref: '#/components/schemas/Constraint'
+    Capella.SubmitBlockRequestWithProofs:
+      allOf:
+        - $ref: "../relay-specs/types/capella/requests.yaml#/Capella/SubmitBlockRequest"
+        - type: object
+          properties:
+            proofs:
+                $ref: '#/components/schemas/Constraint'
+    Deneb.SubmitBlockRequestWithProofs:
+      allOf:
+        - $ref: "../relay-specs/types/deneb/requests.yaml#/Deneb/SubmitBlockRequest"
+        - type: object
+          properties:
+            proofs:
+                $ref: '#/components/schemas/Constraint'
+    Electra.SubmitBlockRequestWithProofs:
+      allOf:
+        - $ref: "../relay-specs/types/electra/requests.yaml#/Electra/SubmitBlockRequest"
+        - type: object
+          properties:
+            proofs:
+                $ref: '#/components/schemas/Constraint'
+    VersionedSubmitBlockRequestWithProofs:
+      oneOf:
+        - $ref: '#/components/schemas/Bellatrix.SubmitBlockRequestWithProofs'
+        - $ref: '#/components/schemas/Capella.SubmitBlockRequestWithProofs'
+        - $ref: '#/components/schemas/Deneb.SubmitBlockRequestWithProofs'
+        - $ref: '#/components/schemas/Electra.SubmitBlockRequestWithProofs'
+
