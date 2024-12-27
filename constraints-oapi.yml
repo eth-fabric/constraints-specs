@@ -53,6 +53,7 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
 
       - `payload`: opaque byte array whose interpretation is dependent on the `commitmentType`
 
+      
       Particularly each `commitmentType` would have a corresponding specification that defines:
 
       - A schema for a `Preconfirmation` and `SignedPreconfirmation` message
@@ -67,7 +68,7 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
 
       - How to generate proofs of constraint validity
         
-      - how to verify proofs of constraint validity"
+      - How to verify proofs of constraint validity"
       requestBody:
           required: true
           content:
