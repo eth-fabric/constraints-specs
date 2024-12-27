@@ -108,24 +108,22 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
         - Constraints API
       summary: "Endpoint for Proposer to request a builder bid with proof of constraint validity"
       description: "
-The `VersionedSignedBuilderBidWithProofs` schema extends `VersionedSignedBuilderBid` from the original builder specs to include proofs of constraint validity. Without leaking the block's contents, a Proposer can verify that the block satisfies the constraints by checking the `proofs` against the block header. To support a wide range of constraint types with different proving requirements, `ConstraintProofs` is left open-ended to allow for future flexibility.
+        The `VersionedSignedBuilderBidWithProofs` schema extends `VersionedSignedBuilderBid` from the original builder specs to include proofs of constraint validity. Without leaking the block's contents, a Proposer can verify that the block satisfies the constraints by checking the `proofs` against the block header. To support a wide range of constraint types with different proving requirements, `ConstraintProofs` is left open-ended to allow for future flexibility.
 
-    - `commitmentTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogenous)
+            - `commitmentTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogenous)
 
-    - `payloads`: list of opaque byte arrays whose interpretation is dependent on the `commitmentTypes`
+            - `payloads`: list of opaque byte arrays whose interpretation is dependent on the `commitmentTypes`
 
 
-Requirements:
+        Requirements:
 
-    - Each `commitmentType` has a spec that defines how builders can generate `proofs` for their block
+            - Each `commitmentType` has a spec that defines how builders can generate `proofs` for their block
 
-    - Each `commitmentType` has a spec that defines how relays and proposers can verify `proofs`
+            - Each `commitmentType` has a spec that defines how relays and proposers can verify `proofs`
 
-    - When serializing, the `proofs` field must be present in `data`, at the same level of `signature` and `message`
+            - When serializing, the `proofs` field must be present in `data`, at the same level of `signature` and `message`
 
-    - The length of `commitmentTypes` and `payloads` must be the same
-
-      "
+            - The length of `commitmentTypes` and `payloads` must be the same"
       parameters:
         - name: slot
           in: path
@@ -146,8 +144,44 @@ Requirements:
         "200":
           description: "OK"
           content:
+            application/json:
               schema:
-                  $ref: '#/components/schemas/VersionedSignedBuilderBidWithProofs'
+                $ref: '#/components/schemas/VersionedSignedBuilderBidWithProofs'
+              examples:
+                deneb:
+                  summary: "Example Deneb builder bid with proofs"
+                  value:
+                    version: "deneb"
+                    data:
+                      message:
+                        header:
+                          parent_hash: "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"
+                          fee_recipient: "0xabcf8e0d4e9587369b2301d0790347320302cc09"
+                          state_root: "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"
+                          receipts_root: "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"
+                          logs_bloom: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+                          prev_randao: "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"
+                          block_number: "1"
+                          gas_limit: "1"
+                          gas_used: "1"
+                          timestamp: "1"
+                          extra_data: "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"
+                          base_fee_per_gas: "1"
+                          blob_gas_used: "0"
+                          excess_blob_gas: "0"
+                          block_hash: "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"
+                          transactions_root: "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"
+                          withdrawals_root: "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"
+                        blob_kzg_commitments: ["0xa94170080872584e54a1cf092d845703b13907f2e6b3b1c0ad573b910530499e3bcd48c6378846b80d2bfa58c81cf3d5"]
+                        value: "1"
+                        pubkey: "0x89abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01"
+                      proofs:
+                        commitmentTypes: [1, 2]
+                        payloads: [
+                          "0x123456789",  # Example proof payload for commitment type 1
+                          "0x987654321fedcba0"   # Example proof payload for commitment type 2
+                        ]
+                    signature: "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
   /constraints/v0/relay/delegations:
     get:
       operationId: "getDelegations"
@@ -226,6 +260,64 @@ Requirements:
             application/json:
                 schema:
                     $ref: '#/components/schemas/VersionedSubmitBlockRequestWithProofs'
+                examples:
+                  deneb:
+                    summary: "Example Deneb builder block with proofs"
+                    value:
+                      message:
+                        slot: "102"
+                        parent_hash: "0x65b83b421bce1cd05bce2d86eb3233122c150e790770a0083e767a137bb5a2ed"
+                        block_hash: "0xd1f43eacf8061a694b2bbe0798b1e50b99084cfdf136ba1fd5ec020f14271010"
+                        builder_pubkey: "0xaa1488eae4b06a1fff840a2b6db167afc520758dc2c8af0dfb57037954df3431b747e2f900fe8805f05d635e9a29717b"
+                        proposer_pubkey: "0xae5302796cfeca685eaf37ffd5baeb32121f2f07415bee26cc0051ee513ff3932d2c365e3d9f87b0949a5980445cb64c"
+                        proposer_fee_recipient: "0x8943545177806ED17B9F23F0a21ee5948eCaa776"
+                        gas_limit: "27616981"
+                        gas_used: "295536"
+                        value: "418266798562488"
+                      execution_payload:
+                        parent_hash: "0x65b83b421bce1cd05bce2d86eb3233122c150e790770a0083e767a137bb5a2ed"
+                        fee_recipient: "0x8943545177806ED17B9F23F0a21ee5948eCaa776"
+                        state_root: "0x41a8bd9993a0efd49767892963cb30ea9695fc7ccab1f3deee417aa269a92f77"
+                        receipts_root: "0x37677efb710ba86196a244c77746aff51c1c9f73c86d233485b8052d94716022"
+                        logs_bloom: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+                        prev_randao: "0x77a34ab437d022f25433b37fc311c4115c4f691c5737caf93779b70a0e4d4c95"
+                        block_number: "102"
+                        gas_limit: "27616981"
+                        gas_used: "295536"
+                        timestamp: "1731939746"
+                        extra_data: "0x496c6c756d696e61746520446d6f63726174697a6520447374726962757465"
+                        base_fee_per_gas: "1882"
+                        block_hash: "0xd1f43eacf8061a694b2bbe0798b1e50b99084cfdf136ba1fd5ec020f14271010"
+                        transactions: [
+                          "0xf86f820154845acf6ba0825208946177843db3138ae69679a54b95cf345ed759450d87071afd498d0000808360306ca0210d69b34df72b8067d2e57961d525a5a8856ef9e8d16be96852db57bdc6aeada04dc401eeb7801b1f6b9efe1d843189bbfdca1acf8802810cee1d703f2649a50b",
+                          "0xf86f820155845acf6ba082520894687704db07e902e9a8b3754031d168d46e3d586e87071afd498d0000808360306ba0f11e0e52e772e58b1ad64aa919293e735a936a2b414677599b83b815053b42afa041894c134e87cdb095be478c170ea9442eb312d3505524ff478194fd29ac723d",
+                          "0xf86f820156845acf6ba08252089415e6a5a2e131dd5467fa1ff3acd104f45ee5940b87071afd498d0000808360306ca04bd1b80b7c1f4c2510247f42f7342c5291c67a15109f8d4e7cc73bf929e53cf2a060bb7a9994cd2a70794db653d801f56d33408b4dca456cf62d80325718ad43e0",
+                          "0xf86f820157845acf6ba08252089480c4c7125967139acaa931ee984a9db4100e0f3b87071afd498d0000808360306ba0dfb605c47f84cd9b0c4f90f39308e10e00bfaff38d4905ee211f51f3389cc272a021f37a9064ba4b98431a8c614c6f2ab02c8d6ffd2d4c6d896405cdac1386ed66",
+                          "0xf86f820158845acf6ba082520894d08a63244fcd28b0aec5075052cdce31ba04fead87071afd498d0000808360306ca05b046b8ff98792bde534233dea5f15cfe24d37963e77da9379813c4ced89dab6a007c2bd7de299aba36c60651c29302868ac94dcb4064db1cee96c6381da4ead7f",
+                          "0xf86f820159845acf6ba0825208940b06ef8be65fcda88f2dbae5813480f997ee8e3587071afd498d0000808360306ba09a1850c2f6080f662f983dcab161a83290a2b98792401e40d8bea15838cfce22a007e0cb2ae9b0057071820677783e4a2f7a04aeeb8faab7981b434ad1d9a24e5f",
+                          "0xf86f82015a845acf6ba0825208941cb96c5809da5977f99f69c11ee58bae5711c5f187071afd498d0000808360306ba071f5330b3d38b57e1c24dbbe82a86387d2310043a669fc5d7492dd88c192df02a05d78693952297460ccc4c8beaf3ec9b99653571d6539e5bcadbf7921e1f8728d",
+                          "0xf86f82015b845acf6ba0825208942aa48ee899410a6d97c01b0bb0eeaf1771cc435b87071afd498d0000808360306ca0d35d384046f37f9d1da5400df25b930a1692ca2a3a15684b973fdbd40cf34f4fa02906f6122f69991a2ca8b4edba5efc3f3982a85540182101985ce8e292ddbfff",
+                          "0xf86f82015c845acf6ba08252089407b9d920dd8e8d83dc1125c94fc0b3cdcdf602fb87071afd498d0000808360306ba0f85ab12940b7c5057958a090b9f3bac0a6a7cbcba5c93e818f14d6e24938bcfea0476cc76f82d36da2b2a77d0e520de992dd737508f54c2e710f68c45d6905d962",
+                          "0xf86f82015d845acf6ba082520894fcb6e353ad4f79245c7cb704abcffe2f4868424187071afd498d0000808360306ca0a50e3fe9877e524676ce519f34e7917f72ef6da9ca075ed65130eb7b828875f0a03764f3dfbf7e656e818dab076b31f223fd2486c275452e283f5e2d062b2e8b67",
+                          "0x02f8908330182480845acf6267845acf75718254ae94614561d2d143621e126e87831aef287678b442b8830186a0a0c20e0240904510085d38aa992039f3ec5a3bb57f7ede6f8924f86c810d261270c001a0993040420b9f88e6e94654d3d4bba64dfd942356d932137682a9ee9b68c08e1aa017127aa42b78c91c57de1dbb5b2852923977bc22c60ffc3e64796885311be88b",
+                          "0x02f8908330182401845acf6267845acf75718254ae94614561d2d143621e126e87831aef287678b442b8830186a0a006f8188796440f23e951c43dabc12708faf18f8e8f84417d1333945b86894cc3c001a0edf40236b9cdfbb25cda8810484340e9d5b1e1023922b37b1d483a5d1fb3f130a00c9ce488f82ce829caafa5c97e187a657f49414360307076bec56de53aabb918",
+                          "0x02f8908330182402845acf6267845acf75718254ae94614561d2d143621e126e87831aef287678b442b8830186a0a09498dae671e12a4df22225c07db38b1b6c4bf4207b9e49fb10062918fb9d4d8fc001a0a8038bf97cc0f7bc742b7b319b4d98154300eb941746f53c48362c55df1913d6a0728550ffc7c06da44f2d6d356285bc24236eac6628a879d5072321eb73d071e4",
+                          "0x02f86e83301824068082075a825208948943545177806ed17b9f23f0a21ee5948ecaa77687017c6953f31cb880c001a0462fb6848c16e585b786e4fc168bd20a3cb180ebf00e34b93fed9c42b0df0e76a03ac159e02cee545d3e24be5fbd26f902626e18bcf6626f50a7636d4de28834e7"
+                        ]
+                        withdrawals: []
+                        blob_gas_used: "0"
+                        excess_blob_gas: "0"
+                      signature: "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
+                      proofs:
+                        commitmentTypes: [1, 2]
+                        payloads: [
+                          "0x123456789",  # Example proof payload for commitment type 1
+                          "0x987654321fedcba0"   # Example proof payload for commitment type 2
+                        ]
+                      blobs_bundle:
+                        commitments: []
+                        proofs: []
+                        blobs: []
       responses:
         "200":
           description: "OK"
