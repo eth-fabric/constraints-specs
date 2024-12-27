@@ -149,7 +149,7 @@ While the Constraints API aims to be unopinionated about how slasher contracts a
       tags:
         - Constraints API
       summary: "Endpoint to retrieve an SSE stream of signed constraints"
-      description: "TODO"
+      description: "This endpoint is a streaming endpoint meant to reduce round-trip latency via SSE, allowing Relays to push new constraints to Builders in realtime. The Relay should only return signed constraints that were signed by the proposer or a gateway that was delegated to by the proposer."
       parameters:
         - name: slot
           in: query
@@ -295,4 +295,37 @@ components:
         - $ref: '#/components/schemas/Capella.SubmitBlockRequestWithProofs'
         - $ref: '#/components/schemas/Deneb.SubmitBlockRequestWithProofs'
         - $ref: '#/components/schemas/Electra.SubmitBlockRequestWithProofs'
+    Bellatrix.SignedBuilderBid:
+      $ref: "../builder-specs/types/bellatrix/requests.yaml#/Bellatrix/SignedBuilderBid"
+    Capella.SignedBuilderBid:
+      $ref: "../builder-specs/types/capella/requests.yaml#/Capella/SignedBuilderBid"
+    Deneb.SignedBuilderBid:
+      $ref: "../builder-specs/types/deneb/requests.yaml#/Deneb/SignedBuilderBid"
+    Bellatrix.SignedBuilderBidWithProofs:
+      allOf:
+        - $ref: "../builder-specs/types/bellatrix/bid.yaml#/Bellatrix/SignedBuilderBid"
+        - type: object
+          properties:
+            proofs:
+                $ref: '#/components/schemas/Constraint'
+    Capella.SignedBuilderBidWithProofs:
+      allOf:
+        - $ref: "../builder-specs/types/capella/bid.yaml#/Capella/SignedBuilderBid"
+        - type: object
+          properties:
+            proofs:
+                $ref: '#/components/schemas/Constraint'
+    Deneb.SignedBuilderBidWithProofs:
+      allOf:
+        - $ref: "../builder-specs/types/deneb/bid.yaml#/Deneb/SignedBuilderBid"
+        - type: object
+          properties:
+            proofs:
+                $ref: '#/components/schemas/Constraint'
+    VersionedSignedBuilderBidWithProofs:
+      oneOf:
+        - $ref: '#/components/schemas/Bellatrix.SignedBuilderBidWithProofs'
+        - $ref: '#/components/schemas/Capella.SignedBuilderBidWithProofs'
+        - $ref: '#/components/schemas/Deneb.SignedBuilderBidWithProofs'
+
 
