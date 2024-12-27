@@ -114,13 +114,14 @@ The `VersionedSignedBuilderBidWithProofs` schema extends `VersionedSignedBuilder
 
     - `payloads`: list of opaque byte arrays whose interpretation is dependent on the `commitmentTypes`
 
+
 Requirements:
 
     - Each `commitmentType` has a spec that defines how builders can generate `proofs` for their block
 
     - Each `commitmentType` has a spec that defines how relays and proposers can verify `proofs`
 
-    - When serializing, the `proofs` field must be present in `data`, at the same level of `signature` and `message`. See the example below.
+    - When serializing, the `proofs` field must be present in `data`, at the same level of `signature` and `message`
 
     - The length of `commitmentTypes` and `payloads` must be the same
 
@@ -135,12 +136,12 @@ Requirements:
           in: path
           required: true
           schema:
-            type: string
+              $ref: "../beacon-apis/types/primitive.yaml#/Root"
         - name: pubkey
           in: path
           required: true
           schema:
-            type: string
+              $ref: "../beacon-apis/types/primitive.yaml#/Pubkey"
       responses:
         "200":
           description: "OK"
