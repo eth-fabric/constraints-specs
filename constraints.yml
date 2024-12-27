@@ -8,29 +8,81 @@ info:
     url: https://jmcph4.dev
     email: jack@jmcph4.dev
 paths:
-  /constraints/v0/delegate:
+  /constraints/v0/relay/delegate:
     post:
       tags:
         - Constraints API
-      summary: "Endpoint for proposer to delegate constraint submission rights to a Gateway"
-      description: "Endpoint for proposer to delegate constraint submission rights to a Gateway"
+      summary: "Endpoint for Proposer to delegate preconfirmation rights, or more accurately, constraint submission rights to a Gateway"
+      description: "
+A proposer can delegate preconfirmations rights by signing a `Delegate` message with their proposer BLS private key. A `SignedDelegation` binds the proposer public key to the delegate public key and a slasher contract until after the `valid_until` slot elapses. During this time, the delegate can submit constraints to the relay on behalf of the proposer.
+
+    - `proposer`: The BLS public key of the proposer who is delegating preconfirmation rights
+    
+    - `delegate`: The BLS public key of the gateway who is receiving preconfirmation rights
+    
+    - `slasher`: The address of a slasher contract containing a slashing function to penalize a proposer who has violated constraints (i.e., reneged on a preconf)
+    
+    - `valid_until`: slot number (inclusive) that a `SignedDelegation` is considered valid until
+    
+    - `metadata`: Additional opaque byte array reserved for and interpreted by the slashing function and/or the gateway (e.g., gas limit, blob limit, chain ID, preconfirmation type)
+
+While the Constraints API aims to be unopinionated about how slasher contracts are implemented, it's assumed that `SignedDelegation` messages are part of the evidence used to slash a proposer.
+      "
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: object
+                  properties:
+                    proposer:
+                      type: string
+                      description: BLS public key
+                    delegate:
+                      type: string
+                      description: BLS public key
+                    slasher:
+                      type: string
+                      description: Ethereum address
+                    valid_until:
+                      type: integer
+                      description: Slot
+                    metadata:
+                      type: string
+                      description: Arbitrary bytes
+                  required:
+                    - proposer
+                    - delegate
+                    - slasher
+                    - valid_until
+                    - metadata
+                signature:
+                  type: string
+                  description: BLS signature
+              required:
+                - message
+                - signature
       responses:
         "200":
           description: "OK"
-  /constraints/v0/constraints:
+          content: {}
+  /constraints/v0/relay/constraints:
     post:
       tags:
         - Constraints API
-      summary: "Endpoint for submitting a batch of signed constraints from either the proposer or gateway to the relay"
-      description: "Endpoint for submitting a batch of signed constraints from either the proposer or gateway to the relay"
+      summary: "Endpoint for Proposer or Gateway to submit a batch of signed constraints to the Relay"
+      description: "TODO"
       responses:
         "200":
           description: "OK"
     get:
       tags:
         - Constraints API
-      summary: "Returns all constraints for a given slot"
-      description: "Returns all constraints for a given slot"
+      summary: "Endpoint to retrieve the signed constraints for a given slot"
+      description: "TODO"
       parameters:
         - name: slot
           in: query
@@ -40,12 +92,12 @@ paths:
       responses:
         "200":
           description: "OK"
-  /constraints/v0/header_with_proofs/{slot}/{parent_hash}/{pubkey}:
+  /constraints/v0/relay/header_with_proofs/{slot}/{parent_hash}/{pubkey}:
     get:
       tags:
         - Constraints API
-      summary: "Endpoint for requesting a builder bid with constraint proofs"
-      description: "Endpoint for requesting a builder bid with constraint proofs"
+      summary: "Endpoint for Proposer to request a builder bid with proof of constraint validity"
+      description: "TODO"
       parameters:
         - name: slot
           in: path
@@ -66,12 +118,12 @@ paths:
       responses:
         "200":
           description: "OK"
-  /constraints/v0/delegations:
+  /constraints/v0/relay/delegations:
     get:
       tags:
         - Constraints API
-      summary: "Returns the active delegations for the proposer of this slot, if it exists"
-      description: "Returns the active delegations for the proposer of this slot, if it exists"
+      summary: "Endpoint to retrieve the signed delegations for the proposer of a given slot, if it exists."
+      description: "TODO"
       parameters:
         - name: slot
           in: query
@@ -81,12 +133,12 @@ paths:
       responses:
         "200":
           description: "OK"
-  /constraints/v0/constraints_stream:
+  /constraints/v0/relay/constraints_stream:
     get:
       tags:
         - Constraints API
-      summary: "Returns an SSE stream of constraints"
-      description: "Returns an SSE stream of constraints"
+      summary: "Endpoint to retrieve an SSE stream of signed constraints"
+      description: "TODO"
       parameters:
         - name: slot
           in: query
@@ -100,8 +152,8 @@ paths:
     post:
       tags:
         - Constraints API
-      summary: "Endpoint for submitting blocks with inclusion proofs"
-      description: "Endpoint for submitting blocks with inclusion proofs"
+      summary: "Endpoint for Builder to submit a block with proofs of constraint validity to the Relay"
+      description: "TODO"
       responses:
         "200":
           description: "OK"
