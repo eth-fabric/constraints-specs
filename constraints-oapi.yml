@@ -211,6 +211,7 @@ The `VersionedSubmitBlockRequestWithProofs` schema extends `VersionedSubmitBlock
 
     - If `cancellations` is true, the Builder is signaling to opt into bid cancellations
 
+
 Requirements:
 
  - Each `commitmentType` has a spec that defines how builders can generate `proofs` for their block
@@ -220,11 +221,11 @@ Requirements:
  - The length of `commitmentTypes` and `payloads` must be the same
       "
       requestBody:
-            required: true
-            content:
-                application/json:
-                    schema:
-                        $ref: '#/components/schemas/VersionedSubmitBlockRequestWithProofs'
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: '#/components/schemas/VersionedSubmitBlockRequestWithProofs'
       responses:
         "200":
           description: "OK"
@@ -329,28 +330,28 @@ components:
         - type: object
           properties:
             proofs:
-                $ref: '#/components/schemas/Constraint'
+                $ref: '#/components/schemas/ConstraintProofs'
     Capella.SubmitBlockRequestWithProofs:
       allOf:
         - $ref: "../relay-specs/types/capella/requests.yaml#/Capella/SubmitBlockRequest"
         - type: object
           properties:
             proofs:
-                $ref: '#/components/schemas/Constraint'
+                $ref: '#/components/schemas/ConstraintProofs'
     Deneb.SubmitBlockRequestWithProofs:
       allOf:
         - $ref: "../relay-specs/types/deneb/requests.yaml#/Deneb/SubmitBlockRequest"
         - type: object
           properties:
             proofs:
-                $ref: '#/components/schemas/Constraint'
+                $ref: '#/components/schemas/ConstraintProofs'
     Electra.SubmitBlockRequestWithProofs:
       allOf:
         - $ref: "../relay-specs/types/electra/requests.yaml#/Electra/SubmitBlockRequest"
         - type: object
           properties:
             proofs:
-                $ref: '#/components/schemas/Constraint'
+                $ref: '#/components/schemas/ConstraintProofs'
     VersionedSubmitBlockRequestWithProofs:
       oneOf:
         - $ref: '#/components/schemas/Bellatrix.SubmitBlockRequestWithProofs'
@@ -369,21 +370,21 @@ components:
         - type: object
           properties:
             proofs:
-                $ref: '#/components/schemas/Constraint'
+                $ref: '#/components/schemas/ConstraintProofs'
     Capella.SignedBuilderBidWithProofs:
       allOf:
         - $ref: "../builder-specs/types/capella/bid.yaml#/Capella/SignedBuilderBid"
         - type: object
           properties:
             proofs:
-                $ref: '#/components/schemas/Constraint'
+                $ref: '#/components/schemas/ConstraintProofs'
     Deneb.SignedBuilderBidWithProofs:
       allOf:
         - $ref: "../builder-specs/types/deneb/bid.yaml#/Deneb/SignedBuilderBid"
         - type: object
           properties:
             proofs:
-                $ref: '#/components/schemas/Constraint'
+                $ref: '#/components/schemas/ConstraintProofs'
     VersionedSignedBuilderBidWithProofs:
       oneOf:
         - $ref: '#/components/schemas/Bellatrix.SignedBuilderBidWithProofs'
