@@ -4,3 +4,6 @@
 [submodule "relay-specs"]
 	path = relay-specs
 	url = git@github.com:flashbots/relay-specs.git
+[submodule "builder-specs"]
+	path = builder-specs
+	url = git@github.com:ethereum/builder-specs.git
