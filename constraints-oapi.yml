@@ -169,15 +169,38 @@ While the Constraints API aims to be unopinionated about how slasher contracts a
                               type: array
                               items:
                                   $ref: '#/components/schemas/SignedConstraints'
-  /constraints/v0/blocks_with_proofs:
+  /constraints/v0/relay/blocks_with_proofs:
     post:
       tags:
         - Constraints API
       summary: "Endpoint for Builder to submit a block with proofs of constraint validity to the Relay"
-      description: "TODO"
+      description: "
+The `VersionedSubmitBlockRequestWithProofs` schema extends `VersionedSubmitBlockRequest` from the original relay specs to include proofs of constraint validity. A Builder can protect their block's content while proving that the block satisfies the constraints by including proofs in the `VersionedSubmitBlockRequestWithProofs` message. To support a wide range of constraint types with different proving requirements, `ConstraintProofs` is left open-ended to allow for future flexibility.
+
+    - `commitmentTypes`: list of unsigned 64-bit numbers between `0 `and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogenous)
+
+    - `payloads`: list of opaque byte arrays whose interpretation is dependent on the commitmentTypes
+
+    - If `cancellations` is true, the Builder is signaling to opt into bid cancellations
+
+Requirements:
+
+ - Each `commitmentType` has a spec that defines how builders can generate `proofs` for their block
+
+ - Each `commitmentType` has a spec that defines how relays and proposers can verify `proofs`
+
+ - The length of `commitmentTypes` and `payloads` must be the same
+      "
+      requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/VersionedSubmitBlockRequestWithProofs'
       responses:
         "200":
           description: "OK"
+          content: {}
 components:
   schemas:
     SignedDelegation:
