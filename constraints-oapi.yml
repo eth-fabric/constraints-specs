@@ -49,38 +49,37 @@ While the Constraints API aims to be unopinionated about how slasher contracts a
 
       For each `Preconfirmation` the delegate signs, they will need to create a matching `Constraint`. Collectively, a `SignedConstraints` message is posted to the Relay.
 
-    - `commitmentType`: unsigned 64-bit number between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment
+      - `commitmentType`: unsigned 64-bit number between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment
 
-    - `payload`: opaque byte array whose interpretation is dependent on the `commitmentType`
+      - `payload`: opaque byte array whose interpretation is dependent on the `commitmentType`
 
-    Particularly each `commitmentType` would have a corresponding specification that defines:
+      Particularly each `commitmentType` would have a corresponding specification that defines:
 
-    - A schema for a `Preconfirmation` and `SignedPreconfirmation` message
+      - A schema for a `Preconfirmation` and `SignedPreconfirmation` message
 
-    - How a `Constraint.payload` is interpreted
+      - How a `Constraint.payload` is interpreted
 
-    - How a `Constraint.payload` is created given a `SignedPreconfirmation`
+      - How a `Constraint.payload` is created given a `SignedPreconfirmation`
 
-    - The ordering of `Constraints[]`
+      - The ordering of `Constraints[]`
 
-    - How to build a valid block given a `ConstraintsMessage`
+      - How to build a valid block given a `ConstraintsMessage`
 
-    - How to generate proofs of constraint validity
-      
-    - how to verify proofs of constraint validity
-      "
-        requestBody:
-            required: true
-            content:
-                application/json:
-                    schema:
-                        type: array
-                        items:
-                            $ref: '#/components/schemas/SignedConstraints'
-        responses:
-            "200":
-              description: "OK"
-              content: {}
+      - How to generate proofs of constraint validity
+        
+      - how to verify proofs of constraint validity"
+      requestBody:
+          required: true
+          content:
+              application/json:
+                  schema:
+                      type: array
+                      items:
+                          $ref: '#/components/schemas/SignedConstraints'
+      responses:
+          "200":
+            description: "OK"
+            content: {}
     get:
       operationId: "getConstraints"
       tags:
