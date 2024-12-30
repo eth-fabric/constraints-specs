@@ -148,9 +148,9 @@ Endpoint for submitting a batch of constraints to the relay. The constraints are
         proposer: BLSPubkey
         delegate: BLSPubkey
         slot: uint64
-        contraints: List[Constraint]
+        constraints: List[Constraint]
 
-    # A contraint for a transactions
+    # A constraint for transaction[s]
     class Constraint(Container):
         commitmentType: uint64
         payload: Bytes
@@ -285,7 +285,7 @@ Endpoint for submitting blocks with proofs of constraint validity to a Relay.
     
     The `VersionedSubmitBlockRequestWithProofs` schema extends `VersionedSubmitBlockRequest` from the [original relay specs](https://flashbots.github.io/relay-specs/#/Builder/submitBlock) to include proofs of constraint validity. A Builder can protect their block's content while proving that the block satisfies the constraints by including proofs in the `VersionedSubmitBlockRequestWithProofs` message. To support a wide range of constraint types with different proving requirements, `ConstraintProofs` is left open-ended to allow for future flexibility.
 
-    - `commitmentTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogenous)
+    - `commitmentTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogeneous)
     - `payloads`: list of opaque byte arrays whose interpretation is dependent on the `commitmentTypes`
     - if `cancellations` is true, the Builder is signaling to opt into bid cancellations
 
@@ -379,7 +379,7 @@ Endpoint for requesting a builder bid with constraint proofs from a Relay.
     
     The `VersionedSignedBuilderBidWithProofs` schema extends `VersionedSignedBuilderBid` from the [original builder specs](https://ethereum.github.io/builder-specs/#/Builder/getHeader) to include proofs of constraint validity. Without leaking the block's contents, a Proposer can verify that the block satisfies the constraints by checking the `proofs` against the block header. To support a wide range of constraint types with different proving requirements, `ConstraintProofs` is left open-ended to allow for future flexibility.
 
-    - `commitmentTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogenous)
+    - `commitmentTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogeneous)
     - `payloads`: list of opaque byte arrays whose interpretation is dependent on the `commitmentTypes`
 
 - **Requirements**: 
@@ -405,7 +405,7 @@ Endpoint for requesting a builder bid with constraint proofs from a Relay.
         tx_hash="0x9fbb...", index=9, merkle_hashes=["0xeeab...", "0x1a2c...", ...]
     ).ssz_encode()
 
-    # example envelope for mulitple proofs
+    # example envelope for multiple proofs
     proofs = ConstraintProofs(
         commitmentTypes=[0x00, 0x00],
         payloads=[

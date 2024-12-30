@@ -21,3 +21,4 @@ jobs:
           with:
             check_hidden: true
             check_filenames: true
+            skip: "./dist/**" # Exclude the dist folder

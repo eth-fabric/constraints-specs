@@ -110,7 +110,7 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
       description: "
         The `VersionedSignedBuilderBidWithProofs` schema extends `VersionedSignedBuilderBid` from the original builder specs to include proofs of constraint validity. Without leaking the block's contents, a Proposer can verify that the block satisfies the constraints by checking the `proofs` against the block header. To support a wide range of constraint types with different proving requirements, `ConstraintProofs` is left open-ended to allow for future flexibility.
 
-            - `commitmentTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogenous)
+            - `commitmentTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogeneous)
 
             - `payloads`: list of opaque byte arrays whose interpretation is dependent on the `commitmentTypes`
 
@@ -239,7 +239,7 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
       description: "
 The `VersionedSubmitBlockRequestWithProofs` schema extends `VersionedSubmitBlockRequest` from the original relay specs to include proofs of constraint validity. A Builder can protect their block's content while proving that the block satisfies the constraints by including proofs in the `VersionedSubmitBlockRequestWithProofs` message. To support a wide range of constraint types with different proving requirements, `ConstraintProofs` is left open-ended to allow for future flexibility.
 
-    - `commitmentTypes`: list of unsigned 64-bit numbers between `0 `and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogenous)
+    - `commitmentTypes`: list of unsigned 64-bit numbers between `0 `and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogeneous)
 
     - `payloads`: list of opaque byte arrays whose interpretation is dependent on the commitmentTypes
 
@@ -375,7 +375,7 @@ components:
             $ref: "../beacon-apis/types/primitive.yaml#/Pubkey"
         slot:
             $ref: "../beacon-apis/types/primitive.yaml#/Uint64"
-        contraints:
+        constraints:
           type: array
           items:
             $ref: '#/components/schemas/Constraint'
@@ -383,7 +383,7 @@ components:
         - proposer
         - delegate
         - slot
-        - contraints
+        - constraints
     Constraint:
       type: object
       properties:
