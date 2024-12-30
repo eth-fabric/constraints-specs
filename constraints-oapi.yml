@@ -369,6 +369,8 @@ components:
     ConstraintsMessage:
       type: object
       properties:
+        proposer:
+            $ref: "../beacon-apis/types/primitive.yaml#/Pubkey"
         delegate:
             $ref: "../beacon-apis/types/primitive.yaml#/Pubkey"
         slot:
@@ -378,6 +380,7 @@ components:
           items:
             $ref: '#/components/schemas/Constraint'
       required:
+        - proposer
         - delegate
         - slot
         - contraints

@@ -145,6 +145,7 @@ Endpoint for submitting a batch of constraints to the relay. The constraints are
 
     # A "bundle" of constraints for a specific slot.
     class ConstraintsMessage(Container):
+        proposer: BLSPubkey
         delegate: BLSPubkey
         slot: uint64
         contraints: List[Constraint]
@@ -187,6 +188,7 @@ Returns all signed constraints for a given slot, if they exist.
     [
         {
             "message": {
+                "proposer": "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a",
                 "delegate": "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a",
                 "slot": "12345",
                 "constraints": [
@@ -231,6 +233,7 @@ Returns a stream of constraints via Server-Sent Events (SSE).
     data: [
         {
             "message": {
+                "proposer": "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a",
                 "delegate": "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a",
                 "slot": "12345",
                 "constraints": [
