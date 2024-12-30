@@ -8,6 +8,7 @@ To render spec in browser, you will simply need an HTTP server to load the index
 For example:
 
 ```bash
+git submodule update --init --recursive # don't forge the submodules!
 python3 -m http.server 8080
 ```
 
