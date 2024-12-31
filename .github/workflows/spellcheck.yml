@@ -21,4 +21,4 @@ jobs:
           with:
             check_hidden: true
             check_filenames: true
-            skip: '*.js', '*.map'
+            skip: '*.js, *.map, *.css'
