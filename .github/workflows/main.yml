@@ -12,7 +12,7 @@ jobs:
     - run: npm i -g @apidevtools/swagger-cli@4 @redocly/cli@1.0.0-beta.111
 
     - name: Lint spec
-      run: redocly lint ./beacon-node-oapi.yaml
+      run: redocly lint ./constraints-oapi.yml
 
     - name: Bundle spec
-      run: "swagger-cli bundle ./beacon-node-oapi.yaml -r -t yaml -o ./deploy/beacon-node-oapi.yaml"
+      run: "swagger-cli bundle ./constraints-oapi.yml -r -t yaml -o ./deploy/constraints-oapi.yml"

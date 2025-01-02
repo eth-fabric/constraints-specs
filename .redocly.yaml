@@ -1,0 +1,10 @@
+extends:
+  - recommended
+rules:
+  no-unused-components: error
+  operation-4xx-response: off
+  operation-tag-defined: error
+  security-defined: off
+  no-invalid-media-type-examples: off
+  no-unresolved-refs: off
+    

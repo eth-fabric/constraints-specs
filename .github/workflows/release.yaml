@@ -13,9 +13,9 @@ jobs:
       - uses: actions/setup-node@v2
       - run: npm i -g @apidevtools/swagger-cli@4
       - name: Bundle yaml spec
-        run: "swagger-cli bundle ./constraints-oapi.yaml -r -t yaml -o ./deploy/constraints-oapi.yaml"
+        run: "swagger-cli bundle ./constraints-oapi.yml -r -t yaml -o ./deploy/constraints-oapi.yml"
       - name: Bundle json spec
-        run: "swagger-cli bundle ./constraints-oapi.yaml -r -t json -o ./deploy/constraints-oapi.json"
+        run: "swagger-cli bundle ./constraints-oapi.yml -r -t json -o ./deploy/constraints-oapi.json"
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -32,8 +32,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./deploy/constraints-oapi.yaml
-          asset_name: constraints-oapi.yaml
+          asset_path: ./deploy/constraints-oapi.yml
+          asset_name: constraints-oapi.yml
           asset_content_type: text/x-yaml
       - name: Upload Json Bundle
         uses: actions/upload-release-asset@v1
