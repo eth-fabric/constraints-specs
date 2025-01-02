@@ -1,18 +1,31 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  build:
+  validate:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
-    - run: npm i -g @apidevtools/swagger-cli@4 @redocly/cli@1.0.0-beta.111
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
-    - name: Lint spec
-      run: redocly lint ./constraints-oapi.yml
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
 
-    - name: Bundle spec
-      run: "swagger-cli bundle ./constraints-oapi.yml -r -t yaml -o ./deploy/constraints-oapi.yml"
+      - name: Install dependencies
+        run: npm install -g @redocly/cli swagger-cli
+
+      - name: Validate
+        run: redocly lint ./constraints-oapi.yml
+
+      - name: Bundle
+        run: swagger-cli bundle ./constraints-oapi.yml -r -t yaml -o ./deploy/constraints-oapi.yml
+        
+        

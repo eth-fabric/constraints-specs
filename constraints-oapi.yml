@@ -22,7 +22,7 @@ servers:
   - url: "{server_url}"
     variables:
       server_url:
-        description: "Beacon node API url"
+        description: "Preconf Constraints API url"
         default: "http://localhost/"
 
 tags:
