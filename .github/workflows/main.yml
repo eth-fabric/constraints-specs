@@ -22,6 +22,6 @@ jobs:
         run: redocly lint ./constraints-oapi.yml
 
       - name: Bundle spec
-        run: swagger-cli bundle ./constraints-oapi.yml -r -t yaml -o ./deploy/constraints-oapi.yml
+        run: swagger-cli bundle constraints-oapi.yml -r -t yaml -o deploy/constraints-oapi.yml
         
         

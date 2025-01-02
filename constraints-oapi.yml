@@ -117,7 +117,7 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
         - name: slot
           in: query
           schema:
-              $ref: "../beacon-apis/types/primitive.yaml#/Uint64"
+              $ref: "./beacon-apis/types/primitive.yaml#/Uint64"
       responses:
         "200":
           description: "OK"
@@ -155,17 +155,17 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
           in: path
           required: true
           schema: 
-              $ref: "../beacon-apis/types/primitive.yaml#/Uint64"
+              $ref: "./beacon-apis/types/primitive.yaml#/Uint64"
         - name: parent_hash
           in: path
           required: true
           schema:
-              $ref: "../beacon-apis/types/primitive.yaml#/Root"
+              $ref: "./beacon-apis/types/primitive.yaml#/Root"
         - name: pubkey
           in: path
           required: true
           schema:
-              $ref: "../beacon-apis/types/primitive.yaml#/Pubkey"
+              $ref: "./beacon-apis/types/primitive.yaml#/Pubkey"
       responses:
         "200":
           description: "OK"
@@ -241,7 +241,7 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
         - name: slot
           in: query
           schema:
-              $ref: "../beacon-apis/types/primitive.yaml#/Uint64"
+              $ref: "./beacon-apis/types/primitive.yaml#/Uint64"
       responses:
         "200":
           description: "OK"
@@ -408,7 +408,7 @@ components:
         message:
           $ref: '#/components/schemas/ConstraintsMessage'
         signature:
-            $ref: "../beacon-apis/types/primitive.yaml#/Signature"
+            $ref: "./beacon-apis/types/primitive.yaml#/Signature"
       required:
         - message
         - signature
@@ -416,11 +416,11 @@ components:
       type: object
       properties:
         proposer:
-            $ref: "../beacon-apis/types/primitive.yaml#/Pubkey"
+            $ref: "./beacon-apis/types/primitive.yaml#/Pubkey"
         delegate:
-            $ref: "../beacon-apis/types/primitive.yaml#/Pubkey"
+            $ref: "./beacon-apis/types/primitive.yaml#/Pubkey"
         slot:
-            $ref: "../beacon-apis/types/primitive.yaml#/Uint64"
+            $ref: "./beacon-apis/types/primitive.yaml#/Uint64"
         constraints:
           type: array
           items:
@@ -483,31 +483,31 @@ components:
             excess_blob_gas:
               $ref: '#/components/schemas/Uint64'
     Electra.SubmitBlockRequest:
-      $ref: "../relay-specs/types/electra/requests.yaml#/Electra/SubmitBlockRequest"
+      $ref: "./relay-specs/types/electra/requests.yaml#/Electra/SubmitBlockRequest"
     Bellatrix.SubmitBlockRequestWithProofs:
       allOf:
-        - $ref: "../relay-specs/types/bellatrix/requests.yaml#/Bellatrix/SubmitBlockRequest"
+        - $ref: "./relay-specs/types/bellatrix/requests.yaml#/Bellatrix/SubmitBlockRequest"
         - type: object
           properties:
             proofs:
                 $ref: '#/components/schemas/ConstraintProofs'
     Capella.SubmitBlockRequestWithProofs:
       allOf:
-        - $ref: "../relay-specs/types/capella/requests.yaml#/Capella/SubmitBlockRequest"
+        - $ref: "./relay-specs/types/capella/requests.yaml#/Capella/SubmitBlockRequest"
         - type: object
           properties:
             proofs:
                 $ref: '#/components/schemas/ConstraintProofs'
     Deneb.SubmitBlockRequestWithProofs:
       allOf:
-        - $ref: "../relay-specs/types/deneb/requests.yaml#/Deneb/SubmitBlockRequest"
+        - $ref: "./relay-specs/types/deneb/requests.yaml#/Deneb/SubmitBlockRequest"
         - type: object
           properties:
             proofs:
                 $ref: '#/components/schemas/ConstraintProofs'
     Electra.SubmitBlockRequestWithProofs:
       allOf:
-        - $ref: "../relay-specs/types/electra/requests.yaml#/Electra/SubmitBlockRequest"
+        - $ref: "./relay-specs/types/electra/requests.yaml#/Electra/SubmitBlockRequest"
         - type: object
           properties:
             proofs:
@@ -543,21 +543,21 @@ components:
               $ref: '#/components/schemas/Uint64'
     Bellatrix.SignedBuilderBidWithProofs:
       allOf:
-        - $ref: "../builder-specs/types/bellatrix/bid.yaml#/Bellatrix/SignedBuilderBid"
+        - $ref: "./builder-specs/types/bellatrix/bid.yaml#/Bellatrix/SignedBuilderBid"
         - type: object
           properties:
             proofs:
                 $ref: '#/components/schemas/ConstraintProofs'
     Capella.SignedBuilderBidWithProofs:
       allOf:
-        - $ref: "../builder-specs/types/capella/bid.yaml#/Capella/SignedBuilderBid"
+        - $ref: "./builder-specs/types/capella/bid.yaml#/Capella/SignedBuilderBid"
         - type: object
           properties:
             proofs:
                 $ref: '#/components/schemas/ConstraintProofs'
     Deneb.SignedBuilderBidWithProofs:
       allOf:
-        - $ref: "../builder-specs/types/deneb/bid.yaml#/Deneb/SignedBuilderBid"
+        - $ref: "./builder-specs/types/deneb/bid.yaml#/Deneb/SignedBuilderBid"
         - type: object
           properties:
             proofs:
