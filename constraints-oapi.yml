@@ -350,25 +350,6 @@ Requirements:
           content: {}
 components:
   schemas:
-    Pubkey:
-      type: string
-      pattern: "^0x[a-fA-F0-9]{96}$"
-      description: "BLS12-381 public key"
-
-    Signature:
-      type: string
-      pattern: "^0x[a-fA-F0-9]{192}$"
-      description: "BLS12-381 signature"
-
-    Uint64:
-      type: string
-      pattern: "^[0-9]+$"
-      description: "Unsigned 64-bit integer"
-    
-    Root:
-      type: string
-      pattern: "^0x[a-fA-F0-9]{64}$"
-      description: "32 byte hash root"
 
     SignedDelegation:
       type: object
@@ -376,7 +357,7 @@ components:
         message:
           $ref: '#/components/schemas/Delegation'
         signature:
-          $ref: '#/components/schemas/Signature'
+          $ref: './beacon-apis/types/primitive.yaml#/Signature'
       required:
         - message
         - signature
@@ -384,9 +365,9 @@ components:
       type: object
       properties:
         proposer:
-          $ref: '#/components/schemas/Pubkey'
+          $ref: './beacon-apis/types/primitive.yaml#/Pubkey'
         delegate:
-          $ref: '#/components/schemas/Pubkey'
+          $ref: './beacon-apis/types/primitive.yaml#/Pubkey'
         slasher:
           type: string
           description: Ethereum address
@@ -460,28 +441,11 @@ components:
           maxItems: 
             $ref: '#/x-constants/MAX_CONSTRAINTS_PER_SLOT'
     Bellatrix.SubmitBlockRequest:
-      type: object
-      properties:
-        message:
-          $ref: '#/components/schemas/BuilderBid'
-        signature:
-          $ref: '#/components/schemas/Signature'
+      $ref: "./relay-specs/types/bellatrix/requests.yaml#/Bellatrix/SubmitBlockRequest"
     Capella.SubmitBlockRequest:
-      allOf:
-        - $ref: '#/components/schemas/Bellatrix.SubmitBlockRequest'
-        - type: object
-          properties:
-            withdrawals_root:
-              $ref: '#/components/schemas/Root'
+      $ref: "./relay-specs/types/capella/requests.yaml#/Capella/SubmitBlockRequest"
     Deneb.SubmitBlockRequest:
-      allOf:
-        - $ref: '#/components/schemas/Capella.SubmitBlockRequest'
-        - type: object
-          properties:
-            blob_gas_used:
-              $ref: '#/components/schemas/Uint64'
-            excess_blob_gas:
-              $ref: '#/components/schemas/Uint64'
+      $ref: "./relay-specs/types/deneb/requests.yaml#/Deneb/SubmitBlockRequest"
     Electra.SubmitBlockRequest:
       $ref: "./relay-specs/types/electra/requests.yaml#/Electra/SubmitBlockRequest"
     Bellatrix.SubmitBlockRequestWithProofs:
@@ -519,28 +483,11 @@ components:
         - $ref: '#/components/schemas/Deneb.SubmitBlockRequestWithProofs'
         - $ref: '#/components/schemas/Electra.SubmitBlockRequestWithProofs'
     Bellatrix.SignedBuilderBid:
-      type: object
-      properties:
-        message:
-          $ref: '#/components/schemas/BuilderBid'
-        signature:
-          $ref: '#/components/schemas/Signature'
+      $ref: "./builder-specs/types/bellatrix/bid.yaml#/Bellatrix/SignedBuilderBid"
     Capella.SignedBuilderBid:
-      allOf:
-        - $ref: '#/components/schemas/Bellatrix.SignedBuilderBid'
-        - type: object
-          properties:
-            withdrawals_root:
-              $ref: '#/components/schemas/Root'
+      $ref: "./builder-specs/types/capella/bid.yaml#/Capella/SignedBuilderBid"
     Deneb.SignedBuilderBid:
-      allOf:
-        - $ref: '#/components/schemas/Capella.SignedBuilderBid'
-        - type: object
-          properties:
-            blob_gas_used:
-              $ref: '#/components/schemas/Uint64'
-            excess_blob_gas:
-              $ref: '#/components/schemas/Uint64'
+      $ref: "./builder-specs/types/deneb/bid.yaml#/Deneb/SignedBuilderBid"
     Bellatrix.SignedBuilderBidWithProofs:
       allOf:
         - $ref: "./builder-specs/types/bellatrix/bid.yaml#/Bellatrix/SignedBuilderBid"
@@ -567,45 +514,3 @@ components:
         - $ref: '#/components/schemas/Bellatrix.SignedBuilderBidWithProofs'
         - $ref: '#/components/schemas/Capella.SignedBuilderBidWithProofs'
         - $ref: '#/components/schemas/Deneb.SignedBuilderBidWithProofs'
-
-    # Add base types for builder requests
-    BuilderBid:
-      type: object
-      properties:
-        header:
-          type: object
-          properties:
-            parent_hash: 
-              $ref: '#/components/schemas/Root'
-            fee_recipient:
-              type: string
-              pattern: "^0x[a-fA-F0-9]{40}$"
-            state_root:
-              $ref: '#/components/schemas/Root'
-            receipts_root:
-              $ref: '#/components/schemas/Root'
-            logs_bloom:
-              type: string
-            prev_randao:
-              $ref: '#/components/schemas/Root'
-            block_number:
-              $ref: '#/components/schemas/Uint64'
-            gas_limit:
-              $ref: '#/components/schemas/Uint64'
-            gas_used:
-              $ref: '#/components/schemas/Uint64'
-            timestamp:
-              $ref: '#/components/schemas/Uint64'
-            extra_data:
-              type: string
-            base_fee_per_gas:
-              $ref: '#/components/schemas/Uint64'
-            block_hash:
-              $ref: '#/components/schemas/Root'
-            transactions_root:
-              $ref: '#/components/schemas/Root'
-        value:
-          $ref: '#/components/schemas/Uint64'
-        pubkey:
-          $ref: '#/components/schemas/Pubkey'
-
