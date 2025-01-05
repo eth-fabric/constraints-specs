@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      - uses: actions/setup-node@v2
+
+      - name: Install dependencies
+        run: npm i -g @apidevtools/swagger-cli@4 @redocly/cli@1.0.0-beta.111
+
+      - name: Lint spec
+        run: redocly lint ./constraints-oapi.yml
+
+      - name: Bundle spec
+        run: swagger-cli bundle constraints-oapi.yml -r -t yaml -o deploy/constraints-oapi.yml
+        
+        
