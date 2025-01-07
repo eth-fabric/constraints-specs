@@ -1,6 +1,8 @@
 # Ethereum Commitment API Specifications
 
-This repo contains an open and neutral API specification for proposer commitments on Ethereum. These standards are currently under review / feedback and are not audited. 
+**These standards are currently under review / feedback and are not audited.**
+
+This repo contains an open and neutral API specification for proposer commitments on Ethereum. This was developed via a joint effort and contribution from teams across the Ethereum ecosystem who were interested in helping develop and enable proposer commitments on Ethereum. The goal of this effort was to define API standards to enable proposer commitments and subsequently standardize the required coordination across the block construction supply chain.
 
 ### Render API Specification
 To render spec in browser, you will simply need an HTTP server to load the index.html file in root of the repo.
