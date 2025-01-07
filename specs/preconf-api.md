@@ -40,13 +40,13 @@ Also known as the Commitments API
 
 | **Namespace** | **Method** | **Endpoint** | **Description** |
 | --- | --- | --- | --- |
-| `constraints`   | `POST` | [/constraints/v0/relay/delegate](./preconf-api.md#endpoint-constraintsv0relaydelegate)           | Endpoint for Proposer to delegate preconfirmation rights, or more accurately, constraint submission rights to a Gateway. |
+| `constraints`   | `POST` | [/constraints/v0/builder/constraints](./preconf-api.md#endpoint-constraintsv0builderconstraints)        | Endpoint for Proposer or Gateway to submit a batch of signed constraints to the Relay. |
+| `constraints`   | `POST` | [/constraints/v0/builder/delegate](./preconf-api.md#endpoint-constraintsv0builderdelegate)           | Endpoint for Proposer to delegate preconfirmation rights, or more accurately, constraint submission rights to a Gateway. |
+| `constraints`   | `GET` | [/constraints/v0/builder/header_with_proofs](./preconf-api.md#endpoint-constraintsv0builderheader_with_proofsslotparent_hashpubkey)  | Endpoint for Proposer to request a builder bid with proof of constraint validity. |
 | `constraints`   | `GET` | [/constraints/v0/relay/delegations](./preconf-api.md#endpoint-constraintsv0relaydelegationsslotslot)         | Endpoint to retrieve the signed delegations for the proposer of a given slot, if it exists. |
-| `constraints`   | `POST` | [/constraints/v0/relay/constraints](./preconf-api.md#endpoint-constraintsv0relayconstraints)        | Endpoint for Proposer or Gateway to submit a batch of signed constraints to the Relay. |
 | `constraints`   | `GET` | [/constraints/v0/relay/constraints](./preconf-api.md#endpoint-constraintsv0relayconstraintsslotslot)         | Endpoint to retrieve the signed constraints for a given slot. |
 | `constraints`   | `GET` | [/constraints/v0/relay/constraints_stream](./preconf-api.md#endpoint-constraintsv0relayconstraints_streamslotslot)  | Endpoint to retrieve an SSE stream of signed constraints. |
 | `constraints`   | `POST` | [/constraints/v0/relay/blocks_with_proofs](./preconf-api.md#endpoint-constraintsv0relayblocks_with_proofscancellationscancellations) | Endpoint for Builder to submit a block with proofs of constraint validity to the Relay. |
-| `constraints`   | `GET` | [/constraints/v0/relay/header_with_proofs](./preconf-api.md#endpoint-constraintsv0relayheader_with_proofsslotparent_hashpubkey)  | Endpoint for Proposer to request a builder bid with proof of constraint validity. |
 
 ---
 ![image.png](../img/preconf-api-diagram.png)
@@ -54,9 +54,59 @@ Also known as the Commitments API
 
 # Constraints API Endpoints
 
-### Endpoint: `/constraints/v0/relay/delegate`
+## Proposer-facing API
 
-Endpoint for a Proposer to delegate constraint submission rights to a Gateway. 
+### Endpoint: `/constraints/v0/builder/constraints`
+
+Endpoint for submitting a batch of constraints to the relay. The constraints are expected to be signed by a `delegate` BLS private key, whose corresponding public key is specified in a `SignedDelegation` message defined below.
+
+- **Method:** `POST`
+- **Response:** Empty
+- **Headers:**
+    - `Content-Type: application/json`
+- **Body:** JSON object of type `SignedConstraints[]`
+
+- **Schema**
+
+    ```python
+    # A signed "bundle" of constraints.
+    class SignedConstraints(Container):
+        message: ConstraintsMessage
+        signature: BLSSignature
+
+    # A "bundle" of constraints for a specific slot.
+    class ConstraintsMessage(Container):
+        proposer: BLSPubkey
+        delegate: BLSPubkey
+        slot: uint64
+        constraints: List[Constraint]
+
+    # A constraint for transaction[s]
+    class Constraint(Container):
+        commitmentType: uint64
+        payload: Bytes
+    ```
+
+- **Description**
+
+    For each `Preconfirmation` the delegate signs, they will need to create a matching `Constraint`. Collectively, a `SignedConstraints` message is posted to the relay.
+
+    - `commitmentType`: unsigned 64-bit number between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment
+    - `payload`: opaque byte array whose interpretation is dependent on the `commitmentType`
+
+    Particularly each `commitmentType` would have a corresponding spec that defines:
+    - a schema for a `Preconfirmation` and `SignedPreconfirmation` message
+    - how a `Constraint.payload` is interpreted
+    - how a `Constraint.payload` is created given a `SignedPreconfirmation`
+    - the ordering of `constraints[]`
+    - how to build a valid block given a `ConstraintsMessage`
+    - how to generate proofs of constraint validity
+    - how to verify proofs of constraint validity
+---
+
+### Endpoint: `/constraints/v0/builder/delegate`
+
+Endpoint for a Proposer to delegate constraint submission rights to a Gateway.
 
 - **Method:** `POST`
 - **Response:** Empty
@@ -74,14 +124,14 @@ Endpoint for a Proposer to delegate constraint submission rights to a Gateway.
     # A delegation from a proposer to a BLS public key
     class Delegation(Container):
         proposer: BLSPubkey
-        delegate: BLSPubkey 
+        delegate: BLSPubkey
         slasher: Address
         valid_until: Slot
         metadata: Bytes
     ```
 
 - **Description**
-    
+
     A proposer can delegate preconfirmations rights by signing a `Delegate` message with their `proposer` BLS private key. A `SignedDelegation` binds the `proposer` public key to the `delegate` public key and a `slasher` contract until after the `valid_until` slot elapses. During this time, the `delegate` can submit constraints to the relay on behalf of the `proposer`.
 
     - `proposer`: The BLS public key of the proposer who is delegating preconfirmation rights.
@@ -92,6 +142,112 @@ Endpoint for a Proposer to delegate constraint submission rights to a Gateway.
 
     While the Constraints API aims to be unopinionated about how slasher contracts are implemented, it's assumed that `SignedDelegation` messages are part of the evidence used to slash a proposer.
 ---
+
+### Endpoint: `/constraints/v0/builder/header_with_proofs/{slot}/{parent_hash}/{pubkey}`
+
+Endpoint for requesting a builder bid with constraint proofs from a Relay.
+
+- **Method:** `GET`
+- **Response:** `VersionedSignedBuilderBidWithProofs`
+- **Parameters:**
+    - `slot`: `string` (regex `[0-9]+`)
+    - `parent_hash`: `string` (regex `0x[a-fA-F0-9]+`)
+    - `pubkey`: `string` (regex `0x[a-fA-F0-9]+`)
+- **Body:** Empty
+
+- **Schema**
+    ```python
+    class VersionedSignedBuilderBidWithProofs:
+        ... # All regular fields from VersionedSignedBuilderBid, additionally
+        proofs: ConstraintProofs
+
+    class ConstraintProofs(Container):
+        commitmentTypes: List[uint64, MAX_CONSTRAINTS_PER_SLOT]
+        payloads: List[Bytes, MAX_CONSTRAINTS_PER_SLOT]
+    ```
+
+- **Description**
+
+    The `VersionedSignedBuilderBidWithProofs` schema extends `VersionedSignedBuilderBid` from the [original builder specs](https://ethereum.github.io/builder-specs/#/Builder/getHeader) to include proofs of constraint validity. Without leaking the block's contents, a Proposer can verify that the block satisfies the constraints by checking the `proofs` against the block header. To support a wide range of constraint types with different proving requirements, `ConstraintProofs` is left open-ended to allow for future flexibility.
+
+    - `commitmentTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogeneous)
+    - `payloads`: list of opaque byte arrays whose interpretation is dependent on the `commitmentTypes`
+
+- **Requirements**:
+    - each `commitmentType` has a spec that defines how builders can generate `proofs` for their block
+    - each `commitmentType` has a spec that defines how relays and proposers can verify `proofs`
+    - When serializing, the `proofs` field must be present in `data`, at the same level of `signature` and `message`. See the example below.
+    - The length of `commitmentTypes` and `payloads` must be the same
+
+- **Example Payload**
+    ```python
+    # commitmentType = 0x00
+    class InclusionProof(Container):
+        tx_hash: Bytes32
+        index: uint64
+        merkle_hashes: List[Bytes32]
+
+    # example inclusion proofs
+    proof_0 = InclusionProof(
+        tx_hash="0xcf8e...", index=7, merkle_hashes=["0xa7bc...", "0xd912...", ...]
+    ).ssz_encode()
+
+    proof_1 = InclusionProof(
+        tx_hash="0x9fbb...", index=9, merkle_hashes=["0xeeab...", "0x1a2c...", ...]
+    ).ssz_encode()
+
+    # example envelope for multiple proofs
+    proofs = ConstraintProofs(
+        commitmentTypes=[0x00, 0x00],
+        payloads=[
+            proof_0,
+            proof_1,
+        ],
+    )
+    ```
+
+- **Example Response**
+    ```json
+    {
+        "version": "deneb",
+        "data": {
+            "message": {
+                "header": {
+                    "parent_hash": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+                    "fee_recipient": "0xabcf8e0d4e9587369b2301d0790347320302cc09",
+                    "state_root": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+                    "receipts_root": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+                    "logs_bloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                    "prev_randao": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+                    "block_number": "1",
+                    "gas_limit": "1",
+                    "gas_used": "1",
+                    "timestamp": "1",
+                    "extra_data": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+                    "base_fee_per_gas": "1",
+                    "blob_gas_used": "1",
+                    "excess_blob_gas": "1",
+                    "block_hash": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+                    "transactions_root": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+                    "withdrawals_root": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"
+                },
+                "blob_kzg_commitments": [
+                    "0xa94170080872584e54a1cf092d845703b13907f2e6b3b1c0ad573b910530499e3bcd48c6378846b80d2bfa58c81cf3d5"
+                ],
+                "value": "1",
+                "pubkey": "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a"
+            },
+            "proofs": {
+                "commitmentTypes": [0x00, 0x00],
+                "payloads": ["0x5097...", "0x932587..."]
+            },
+            "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
+        }
+    }
+    ```
+---
+
+## Builder-facing API
 
 ### Endpoint: `/constraints/v0/relay/delegations?slot={slot}`
 
@@ -125,53 +281,6 @@ Return the active delegations for the proposer of this slot, if they exist.
 
 ---
 
-### Endpoint: `/constraints/v0/relay/constraints`
-
-Endpoint for submitting a batch of constraints to the relay. The constraints are expected to be signed by a `delegate` BLS private key, whose corresponding public key is specified in a `SignedDelegation` message.
-
-- **Method:** `POST`
-- **Response:** Empty
-- **Headers:**
-    - `Content-Type: application/json`
-- **Body:** JSON object of type `SignedConstraints[]`
-
-- **Schema**
-
-    ```python
-    # A signed "bundle" of constraints.
-    class SignedConstraints(Container):
-        message: ConstraintsMessage
-        signature: BLSSignature
-
-    # A "bundle" of constraints for a specific slot.
-    class ConstraintsMessage(Container):
-        proposer: BLSPubkey
-        delegate: BLSPubkey
-        slot: uint64
-        constraints: List[Constraint]
-
-    # A constraint for transaction[s]
-    class Constraint(Container):
-        commitmentType: uint64
-        payload: Bytes
-    ```
-
-- **Description**
-    
-    For each `Preconfirmation` the delegate signs, they will need to create a matching `Constraint`. Collectively, a `SignedConstraints` message is posted to the relay. 
-    
-    - `commitmentType`: unsigned 64-bit number between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment
-    - `payload`: opaque byte array whose interpretation is dependent on the `commitmentType`
-
-    Particularly each `commitmentType` would have a corresponding spec that defines:
-    - a schema for a `Preconfirmation` and `SignedPreconfirmation` message
-    - how a `Constraint.payload` is interpreted
-    - how a `Constraint.payload` is created given a `SignedPreconfirmation`
-    - the ordering of `constraints[]`
-    - how to build a valid block given a `ConstraintsMessage`
-    - how to generate proofs of constraint validity
-    - how to verify proofs of constraint validity
----
 
 ### Endpoint: `/constraints/v0/relay/constraints?slot={slot}`
 
@@ -255,7 +364,7 @@ Returns a stream of constraints via Server-Sent Events (SSE).
 - **Description**
 
     This endpoint is a streaming endpoint meant to reduce round-trip latency via SSE, allowing Relays to push new constraints to Builders in realtime.
-    The Relay should only return signed constraints that were signed by the proposer or a gateway that was delegated to by the proposer. 
+    The Relay should only return signed constraints that were signed by the proposer or a gateway that was delegated to by the proposer.
 ---
 
 ### Endpoint: `/constraints/v0/relay/blocks_with_proofs?cancellations={cancellations}`
@@ -282,14 +391,14 @@ Endpoint for submitting blocks with proofs of constraint validity to a Relay.
     ```
 
 - **Description**
-    
+
     The `VersionedSubmitBlockRequestWithProofs` schema extends `VersionedSubmitBlockRequest` from the [original relay specs](https://flashbots.github.io/relay-specs/#/Builder/submitBlock) to include proofs of constraint validity. A Builder can protect their block's content while proving that the block satisfies the constraints by including proofs in the `VersionedSubmitBlockRequestWithProofs` message. To support a wide range of constraint types with different proving requirements, `ConstraintProofs` is left open-ended to allow for future flexibility.
 
     - `commitmentTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogeneous)
     - `payloads`: list of opaque byte arrays whose interpretation is dependent on the `commitmentTypes`
     - if `cancellations` is true, the Builder is signaling to opt into bid cancellations
 
-- **Requirements**: 
+- **Requirements**:
     - each `commitmentType` has a spec that defines how builders can generate `proofs` for their block
     - each `commitmentType` has a spec that defines how relays and proposers can verify `proofs`
     - The length of `commitmentTypes` and `payloads` must be the same
@@ -350,111 +459,8 @@ Endpoint for submitting blocks with proofs of constraint validity to a Relay.
     "blobs_bundle": { "commitments": [], "proofs": [], "blobs": [] }
     }
     ```
----    
-
-### Endpoint: **`/constraints/v0/relay/header_with_proofs/{slot}/{parent_hash}/{pubkey}`**
-
-Endpoint for requesting a builder bid with constraint proofs from a Relay.
-
-- **Method:** `GET`
-- **Response:** `VersionedSignedBuilderBidWithProofs`
-- **Parameters:**
-    - `slot`: `string` (regex `[0-9]+`)
-    - `parent_hash`: `string` (regex `0x[a-fA-F0-9]+`)
-    - `pubkey`: `string` (regex `0x[a-fA-F0-9]+`)
-- **Body:** Empty
-
-- **Schema**
-    ```python
-    class VersionedSignedBuilderBidWithProofs:
-        ... # All regular fields from VersionedSignedBuilderBid, additionally
-        proofs: ConstraintProofs
-
-    class ConstraintProofs(Container):
-        commitmentTypes: List[uint64, MAX_CONSTRAINTS_PER_SLOT]
-        payloads: List[Bytes, MAX_CONSTRAINTS_PER_SLOT]
-    ```
-
-- **Description**
-    
-    The `VersionedSignedBuilderBidWithProofs` schema extends `VersionedSignedBuilderBid` from the [original builder specs](https://ethereum.github.io/builder-specs/#/Builder/getHeader) to include proofs of constraint validity. Without leaking the block's contents, a Proposer can verify that the block satisfies the constraints by checking the `proofs` against the block header. To support a wide range of constraint types with different proving requirements, `ConstraintProofs` is left open-ended to allow for future flexibility.
-
-    - `commitmentTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogeneous)
-    - `payloads`: list of opaque byte arrays whose interpretation is dependent on the `commitmentTypes`
-
-- **Requirements**: 
-    - each `commitmentType` has a spec that defines how builders can generate `proofs` for their block
-    - each `commitmentType` has a spec that defines how relays and proposers can verify `proofs`
-    - When serializing, the `proofs` field must be present in `data`, at the same level of `signature` and `message`. See the example below.
-    - The length of `commitmentTypes` and `payloads` must be the same
-
-- **Example Payload**
-    ```python
-    # commitmentType = 0x00
-    class InclusionProof(Container):
-        tx_hash: Bytes32
-        index: uint64
-        merkle_hashes: List[Bytes32]
-    
-    # example inclusion proofs
-    proof_0 = InclusionProof(
-        tx_hash="0xcf8e...", index=7, merkle_hashes=["0xa7bc...", "0xd912...", ...]
-    ).ssz_encode()
-
-    proof_1 = InclusionProof(
-        tx_hash="0x9fbb...", index=9, merkle_hashes=["0xeeab...", "0x1a2c...", ...]
-    ).ssz_encode()
-
-    # example envelope for multiple proofs
-    proofs = ConstraintProofs(
-        commitmentTypes=[0x00, 0x00],
-        payloads=[
-            proof_0,
-            proof_1,
-        ],
-    )
-    ```
-
-- **Example Response**
-    ```json
-    {
-        "version": "deneb",
-        "data": {
-            "message": {
-                "header": {
-                    "parent_hash": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "fee_recipient": "0xabcf8e0d4e9587369b2301d0790347320302cc09",
-                    "state_root": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "receipts_root": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "logs_bloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-                    "prev_randao": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "block_number": "1",
-                    "gas_limit": "1",
-                    "gas_used": "1",
-                    "timestamp": "1",
-                    "extra_data": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "base_fee_per_gas": "1",
-                    "blob_gas_used": "1",
-                    "excess_blob_gas": "1",
-                    "block_hash": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "transactions_root": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "withdrawals_root": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"
-                },
-                "blob_kzg_commitments": [
-                    "0xa94170080872584e54a1cf092d845703b13907f2e6b3b1c0ad573b910530499e3bcd48c6378846b80d2bfa58c81cf3d5"
-                ],
-                "value": "1",
-                "pubkey": "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a"
-            },
-            "proofs": {
-                "commitmentTypes": [0x00, 0x00],
-                "payloads": ["0x5097...", "0x932587..."]
-            },
-            "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
-        }
-    }
-    ```
 ---
+
 
 # Annotated Sequence Diagram
 ```mermaid
@@ -467,7 +473,7 @@ autonumber
     participant RPC Router
     participant Wallet
     participant User
-    
+
     Proposer->>Relay: POST /delegate
     Builder->>Relay: GET /delegate
     RPC Router->>Relay: GET /delegate
@@ -522,4 +528,4 @@ autonumber
 
 - (21) Continuation of standard PBS protocol
 
-- (22) Proposer proposes block to L1, and User receives L1 confirmation  
+- (22) Proposer proposes block to L1, and User receives L1 confirmation
