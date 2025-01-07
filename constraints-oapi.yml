@@ -187,6 +187,20 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
                           "0x987654321fedcba0"   # Example proof payload for commitment type 2
                         ]
                     signature: "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
+  /constraints/v0/builder/capabilities:
+    get:
+      operationId: "getCapabilities"
+      tags:
+        - Constraints API
+      summary: "Endpoint to retrieve the constraint capabilities of the Relay"
+      description: "This endpoint returns a list of `constraintTypes` that the Relay supports. The `constraintTypes` are unsigned 64-bit numbers between `0` and `0xffffffffffffffff`."
+      responses:
+        "200":
+          description: "OK"
+          content:
+              application/json:
+                  schema:
+                      $ref: '#/components/schemas/ConstraintCapabilities'
   /constraints/v0/relay/constraints:
     get:
       operationId: "getConstraints"
@@ -348,20 +362,6 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
         "200":
           description: "OK"
           content: {}
-  /constraints/v0/relay/capabilities:
-    get:
-      operationId: "getCapabilities"
-      tags:
-        - Constraints API
-      summary: "Endpoint to retrieve the constraint capabilities of the Relay"
-      description: "This endpoint returns a list of `constraintTypes` that the Relay supports. The `constraintTypes` are unsigned 64-bit numbers between `0` and `0xffffffffffffffff`."
-      responses:
-        "200":
-          description: "OK"
-          content:
-              application/json:
-                  schema:
-                      $ref: '#/components/schemas/ConstraintCapabilities'
 
 components:
   schemas:
