@@ -10,7 +10,7 @@ info:
     data is required in response to a request the header "Accept: application/octet-stream" should be sent.  Note that only a subset
     of requests can respond with data in SSZ format; these are noted in each individual request.
 
-  version: "v0.0.1 - Ethereum Preconfirmations API Specification v0.0.1"
+  version: "v0.0.1 - Ethereum Constraints API Specification v0.0.1"
   contact:
     name: Ethereum Commitments Github
     url: https://github.com/ethereum-commitments/constraints-specs/issues
@@ -43,12 +43,12 @@ paths:
 
       For each `Preconfirmation` the delegate signs, they will need to create a matching `Constraint`. Collectively, a `SignedConstraints` message is posted to the Relay.
 
-      - `commitmentType`: unsigned 64-bit number between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment
+      - `constraintType`: unsigned 64-bit number between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment
 
-      - `payload`: opaque byte array whose interpretation is dependent on the `commitmentType`
+      - `payload`: opaque byte array whose interpretation is dependent on the `constraintType`
 
       
-      Particularly each `commitmentType` would have a corresponding specification that defines:
+      Particularly each `constraintType` would have a corresponding specification that defines:
 
       - A schema for a `Preconfirmation` and `SignedPreconfirmation` message
 
@@ -115,20 +115,20 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
       description: "
         The `VersionedSignedBuilderBidWithProofs` schema extends `VersionedSignedBuilderBid` from the original builder specs to include proofs of constraint validity. Without leaking the block's contents, a Proposer can verify that the block satisfies the constraints by checking the `proofs` against the block header. To support a wide range of constraint types with different proving requirements, `ConstraintProofs` is left open-ended to allow for future flexibility.
 
-            - `commitmentTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogeneous)
+            - `constraintTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogeneous)
 
-            - `payloads`: list of opaque byte arrays whose interpretation is dependent on the `commitmentTypes`
+            - `payloads`: list of opaque byte arrays whose interpretation is dependent on the `constraintTypes`
 
 
         Requirements:
 
-            - Each `commitmentType` has a spec that defines how builders can generate `proofs` for their block
+            - Each `constraintType` has a spec that defines how builders can generate `proofs` for their block
 
-            - Each `commitmentType` has a spec that defines how relays and proposers can verify `proofs`
+            - Each `constraintType` has a spec that defines how relays and proposers can verify `proofs`
 
             - When serializing, the `proofs` field must be present in `data`, at the same level of `signature` and `message`
 
-            - The length of `commitmentTypes` and `payloads` must be the same"
+            - The length of `constraintTypes` and `payloads` must be the same"
       parameters:
         - name: slot
           in: path
@@ -181,10 +181,10 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
                         value: "1"
                         pubkey: "0x89abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01"
                       proofs:
-                        commitmentTypes: [1, 2]
+                        constraintTypes: [1, 2]
                         payloads: [
-                          "0x123456789",  # Example proof payload for commitment type 1
-                          "0x987654321fedcba0"   # Example proof payload for commitment type 2
+                          "0x123456789",  # Example proof payload for constraint type 1
+                          "0x987654321fedcba0"   # Example proof payload for constraint type 2
                         ]
                     signature: "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
 
@@ -266,20 +266,20 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
       description: "
 The `VersionedSubmitBlockRequestWithProofs` schema extends `VersionedSubmitBlockRequest` from the original relay specs to include proofs of constraint validity. A Builder can protect their block's content while proving that the block satisfies the constraints by including proofs in the `VersionedSubmitBlockRequestWithProofs` message. To support a wide range of constraint types with different proving requirements, `ConstraintProofs` is left open-ended to allow for future flexibility.
 
-    - `commitmentTypes`: list of unsigned 64-bit numbers between `0 `and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogeneous)
+    - `constraintTypes`: list of unsigned 64-bit numbers between `0 `and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogeneous)
 
-    - `payloads`: list of opaque byte arrays whose interpretation is dependent on the commitmentTypes
+    - `payloads`: list of opaque byte arrays whose interpretation is dependent on the constraintTypes
 
     - If `cancellations` is true, the Builder is signaling to opt into bid cancellations
 
 
 Requirements:
 
- - Each `commitmentType` has a spec that defines how builders can generate `proofs` for their block
+ - Each `constraintType` has a spec that defines how builders can generate `proofs` for their block
 
- - Each `commitmentType` has a spec that defines how relays and proposers can verify `proofs`
+ - Each `constraintType` has a spec that defines how relays and proposers can verify `proofs`
 
- - The length of `commitmentTypes` and `payloads` must be the same
+ - The length of `constraintTypes` and `payloads` must be the same
       "
       requestBody:
         required: true
@@ -336,10 +336,10 @@ Requirements:
                         excess_blob_gas: "0"
                       signature: "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
                       proofs:
-                        commitmentTypes: [1, 2]
+                        constraintTypes: [1, 2]
                         payloads: [
-                          "0x123456789",  # Example proof payload for commitment type 1
-                          "0x987654321fedcba0"   # Example proof payload for commitment type 2
+                          "0x123456789",  # Example proof payload for constraint type 1
+                          "0x987654321fedcba0"   # Example proof payload for constraint type 2
                         ]
                       blobs_bundle:
                         commitments: []
@@ -415,19 +415,19 @@ components:
     Constraint:
       type: object
       properties:
-        commitmentType:
+        constraintType:
           type: integer
-          description: Commitment type
+          description: Constraint type
         payload:
           type: string
           description: Arbitrary bytes
       required:
-        - commitmentType
+        - constraintType
         - payload
     ConstraintProofs:
       type: object
       properties:
-        commitmentTypes:
+        constraintTypes:
           type: array
           items:
             type: integer
