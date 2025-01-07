@@ -1,4 +1,4 @@
-# Ethereum Commitment API Specifications
+# Ethereum Constraints API Specifications
 
 **These standards are currently under review / feedback and are not audited.**
 
