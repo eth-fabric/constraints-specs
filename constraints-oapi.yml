@@ -62,7 +62,10 @@ paths:
 
       - How to generate proofs of constraint validity
         
-      - How to verify proofs of constraint validity"
+      - How to verify proofs of constraint validity
+
+
+      To ensure deterministic behavior for stateful constraints it is *required* for the `ConstraintsMessage.Constraints[]` to be processed in the order received."
       requestBody:
           required: true
           content:
