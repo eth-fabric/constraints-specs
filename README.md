@@ -1,6 +1,6 @@
-# Ethereum Preconfirmation API Specifications
+# Ethereum Commitment API Specifications
 
-This repo contains an open and neutral API specification for preconfirmations on Ethereum.
+This repo contains an open and neutral API specification for proposer commitments on Ethereum.
 
 ### Render API Specification
 To render spec in browser, you will simply need an HTTP server to load the index.html file in root of the repo.
