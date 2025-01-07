@@ -43,6 +43,7 @@ Also known as the Commitments API
 | `constraints`   | `POST` | [/constraints/v0/builder/constraints](./preconf-api.md#endpoint-constraintsv0builderconstraints)        | Endpoint for Proposer or Gateway to submit a batch of signed constraints to the Relay. |
 | `constraints`   | `POST` | [/constraints/v0/builder/delegate](./preconf-api.md#endpoint-constraintsv0builderdelegate)           | Endpoint for Proposer to delegate preconfirmation rights, or more accurately, constraint submission rights to a Gateway. |
 | `constraints`   | `GET` | [/constraints/v0/builder/header_with_proofs](./preconf-api.md#endpoint-constraintsv0builderheader_with_proofsslotparent_hashpubkey)  | Endpoint for Proposer to request a builder bid with proof of constraint validity. |
+| `constraints`   | `GET` | [/constraints/v0/builder/capabilities](./preconf-api.md#endpoint-constraintsv0buildercapabilities)         | Endpoint to retrieve the constraint capabilities of the Relay. |
 | `constraints`   | `GET` | [/constraints/v0/relay/delegations](./preconf-api.md#endpoint-constraintsv0relaydelegationsslotslot)         | Endpoint to retrieve the signed delegations for the proposer of a given slot, if it exists. |
 | `constraints`   | `GET` | [/constraints/v0/relay/constraints](./preconf-api.md#endpoint-constraintsv0relayconstraintsslotslot)         | Endpoint to retrieve the signed constraints for a given slot. |
 | `constraints`   | `GET` | [/constraints/v0/relay/constraints_stream](./preconf-api.md#endpoint-constraintsv0relayconstraints_streamslotslot)  | Endpoint to retrieve an SSE stream of signed constraints. |
@@ -245,6 +246,34 @@ Endpoint for requesting a builder bid with constraint proofs from a Relay.
         }
     }
     ```
+---
+
+### Endpoint: `/constraints/v0/builder/capabilities`
+
+Endpoint to retrieve the constraint capabilities of the Relay.
+
+- **Method:** `GET`
+- **Parameters:** None
+- **Headers:** None
+- **Response:** `ConstraintCapabilities`
+
+- **Schema**
+    ```python
+    class ConstraintCapabilities(Container):
+        constraintTypes: List[uint64]
+    ```
+---
+
+- **Example Response**
+    ```json
+    {
+        "constraintTypes": [0x00, 0x01]
+    }
+    ```
+
+- **Description**
+
+    The `ConstraintCapabilities` object defines the constraint types that the Relay supports. Gateways and Builders can use this to update their software accordingly.
 ---
 
 ## Builder-facing API
@@ -460,7 +489,6 @@ Endpoint for submitting blocks with proofs of constraint validity to a Relay.
     }
     ```
 ---
-
 
 # Annotated Sequence Diagram
 ```mermaid
