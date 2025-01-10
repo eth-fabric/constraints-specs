@@ -190,7 +190,20 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
                           "0x987654321fedcba0"   # Example proof payload for constraint type 2
                         ]
                     signature: "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
-
+  /constraints/v0/builder/capabilities:
+    get:
+      operationId: "getCapabilities"
+      tags:
+        - Constraints API
+      summary: "Endpoint to retrieve the constraint capabilities of the Relay"
+      description: "This endpoint returns a list of `constraintTypes` that the Relay supports. The `constraintTypes` are unsigned 64-bit numbers between `0` and `0xffffffffffffffff`."
+      responses:
+        "200":
+          description: "OK"
+          content:
+              application/json:
+                  schema:
+                      $ref: '#/components/schemas/ConstraintCapabilities'
   /constraints/v0/relay/constraints:
     get:
       operationId: "getConstraints"
@@ -267,16 +280,16 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
         - Constraints API
       summary: "Endpoint for Builder to submit a block with proofs of constraint validity to the Relay"
       description: "
-The `VersionedSubmitBlockRequestWithProofs` schema extends `VersionedSubmitBlockRequest` from the original relay specs to include proofs of constraint validity. A Builder can protect their block's content while proving that the block satisfies the constraints by including proofs in the `VersionedSubmitBlockRequestWithProofs` message. To support a wide range of constraint types with different proving requirements, `ConstraintProofs` is left open-ended to allow for future flexibility.
+        The `VersionedSubmitBlockRequestWithProofs` schema extends `VersionedSubmitBlockRequest` from the original relay specs to include proofs of constraint validity. A Builder can protect their block's content while proving that the block satisfies the constraints by including proofs in the `VersionedSubmitBlockRequestWithProofs` message. To support a wide range of constraint types with different proving requirements, `ConstraintProofs` is left open-ended to allow for future flexibility.
 
     - `constraintTypes`: list of unsigned 64-bit numbers between `0 `and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogeneous)
 
     - `payloads`: list of opaque byte arrays whose interpretation is dependent on the constraintTypes
 
-    - If `cancellations` is true, the Builder is signaling to opt into bid cancellations
+            - If `cancellations` is true, the Builder is signaling to opt into bid cancellations
 
 
-Requirements:
+        Requirements:
 
  - Each `constraintType` has a spec that defines how builders can generate `proofs` for their block
 
@@ -352,6 +365,7 @@ Requirements:
         "200":
           description: "OK"
           content: {}
+
 components:
   schemas:
 
@@ -444,6 +458,16 @@ components:
             format: byte
           maxItems: 
             $ref: '#/x-constants/MAX_CONSTRAINTS_PER_SLOT'
+    ConstraintCapabilities:
+      type: object
+      properties:
+        constraintTypes:
+          type: array
+          items:
+            type: integer
+            format: uint64
+      required:
+        - constraintTypes
     Bellatrix.SubmitBlockRequest:
       $ref: "./relay-specs/types/bellatrix/requests.yaml#/Bellatrix/SubmitBlockRequest"
     Capella.SubmitBlockRequest:
