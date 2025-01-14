@@ -84,7 +84,7 @@ Endpoint for submitting a batch of constraints to the relay. The constraints are
 
     # A constraint for transaction[s]
     class Constraint(Container):
-        commitmentType: uint64
+        constraintType: uint64
         payload: Bytes
     ```
 
@@ -92,10 +92,10 @@ Endpoint for submitting a batch of constraints to the relay. The constraints are
 
     For each `Preconfirmation` the delegate signs, they will need to create a matching `Constraint`. Collectively, a `SignedConstraints` message is posted to the relay.
 
-    - `commitmentType`: unsigned 64-bit number between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment
-    - `payload`: opaque byte array whose interpretation is dependent on the `commitmentType`
+    - `constraintType`: unsigned 64-bit number between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment
+    - `payload`: opaque byte array whose interpretation is dependent on the `constraintType`
 
-    Particularly each `commitmentType` would have a corresponding spec that defines:
+    Particularly each `constraintType` would have a corresponding spec that defines:
     - a schema for a `Preconfirmation` and `SignedPreconfirmation` message
     - how a `Constraint.payload` is interpreted
     - how a `Constraint.payload` is created given a `SignedPreconfirmation`
@@ -163,7 +163,7 @@ Endpoint for requesting a builder bid with constraint proofs from a Relay.
         proofs: ConstraintProofs
 
     class ConstraintProofs(Container):
-        commitmentTypes: List[uint64, MAX_CONSTRAINTS_PER_SLOT]
+        constraintTypes: List[uint64, MAX_CONSTRAINTS_PER_SLOT]
         payloads: List[Bytes, MAX_CONSTRAINTS_PER_SLOT]
     ```
 
@@ -171,18 +171,18 @@ Endpoint for requesting a builder bid with constraint proofs from a Relay.
 
     The `VersionedSignedBuilderBidWithProofs` schema extends `VersionedSignedBuilderBid` from the [original builder specs](https://ethereum.github.io/builder-specs/#/Builder/getHeader) to include proofs of constraint validity. Without leaking the block's contents, a Proposer can verify that the block satisfies the constraints by checking the `proofs` against the block header. To support a wide range of constraint types with different proving requirements, `ConstraintProofs` is left open-ended to allow for future flexibility.
 
-    - `commitmentTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogeneous)
-    - `payloads`: list of opaque byte arrays whose interpretation is dependent on the `commitmentTypes`
+    - `constraintTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogeneous)
+    - `payloads`: list of opaque byte arrays whose interpretation is dependent on the `constraintTypes`
 
 - **Requirements**:
-    - each `commitmentType` has a spec that defines how builders can generate `proofs` for their block
-    - each `commitmentType` has a spec that defines how relays and proposers can verify `proofs`
+    - each `constraintType` has a spec that defines how builders can generate `proofs` for their block
+    - each `constraintType` has a spec that defines how relays and proposers can verify `proofs`
     - When serializing, the `proofs` field must be present in `data`, at the same level of `signature` and `message`. See the example below.
-    - The length of `commitmentTypes` and `payloads` must be the same
+    - The length of `constraintTypes` and `payloads` must be the same
 
 - **Example Payload**
     ```python
-    # commitmentType = 0x00
+    # constraintType = 0x00
     class InclusionProof(Container):
         tx_hash: Bytes32
         index: uint64
@@ -199,7 +199,7 @@ Endpoint for requesting a builder bid with constraint proofs from a Relay.
 
     # example envelope for multiple proofs
     proofs = ConstraintProofs(
-        commitmentTypes=[0x00, 0x00],
+        constraintTypes=[0x00, 0x00],
         payloads=[
             proof_0,
             proof_1,
@@ -239,7 +239,7 @@ Endpoint for requesting a builder bid with constraint proofs from a Relay.
                 "pubkey": "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a"
             },
             "proofs": {
-                "commitmentTypes": [0x00, 0x00],
+                "constraintTypes": [0x00, 0x00],
                 "payloads": ["0x5097...", "0x932587..."]
             },
             "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
@@ -331,11 +331,11 @@ Returns all signed constraints for a given slot, if they exist.
                 "slot": "12345",
                 "constraints": [
                     {
-                        "commitmentType": "0x00",
+                        "constraintType": "0x00",
                         "payload": "0x301d0790347320302cc0943d5a1884560367e8208d920f2e9587369b2301de9587369b2301d0790347320302cc0"
                     },
                     {
-                        "commitmentType": "0x01",
+                        "constraintType": "0x01",
                         "payload": "0x367e8208d920f2e9587369b2301de9587369b2301d0790347320302cc0301d0790347320302cc0943d5a1884560367e8208d920f2e958"
                     }
                 ]
@@ -376,11 +376,11 @@ Returns a stream of constraints via Server-Sent Events (SSE).
                 "slot": "12345",
                 "constraints": [
                     {
-                        "commitmentType": "0x00",
+                        "constraintType": "0x00",
                         "payload": "0x301d0790347320302cc0943d5a1884560367e8208d920f2e9587369b2301de9587369b2301d0790347320302cc0"
                     },
                     {
-                        "commitmentType": "0x01",
+                        "constraintType": "0x01",
                         "payload": "0x367e8208d920f2e9587369b2301de9587369b2301d0790347320302cc0301d0790347320302cc0943d5a1884560367e8208d920f2e958"
                     }
                 ]
@@ -415,7 +415,7 @@ Endpoint for submitting blocks with proofs of constraint validity to a Relay.
         proofs: ConstraintProofs
 
     class ConstraintProofs(Container):
-        commitmentTypes: List[uint64, MAX_CONSTRAINTS_PER_SLOT]
+        constraintTypes: List[uint64, MAX_CONSTRAINTS_PER_SLOT]
         payloads: List[Bytes, MAX_CONSTRAINTS_PER_SLOT]
     ```
 
@@ -423,14 +423,14 @@ Endpoint for submitting blocks with proofs of constraint validity to a Relay.
 
     The `VersionedSubmitBlockRequestWithProofs` schema extends `VersionedSubmitBlockRequest` from the [original relay specs](https://flashbots.github.io/relay-specs/#/Builder/submitBlock) to include proofs of constraint validity. A Builder can protect their block's content while proving that the block satisfies the constraints by including proofs in the `VersionedSubmitBlockRequestWithProofs` message. To support a wide range of constraint types with different proving requirements, `ConstraintProofs` is left open-ended to allow for future flexibility.
 
-    - `commitmentTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogeneous)
-    - `payloads`: list of opaque byte arrays whose interpretation is dependent on the `commitmentTypes`
+    - `constraintTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogeneous)
+    - `payloads`: list of opaque byte arrays whose interpretation is dependent on the `constraintTypes`
     - if `cancellations` is true, the Builder is signaling to opt into bid cancellations
 
 - **Requirements**:
-    - each `commitmentType` has a spec that defines how builders can generate `proofs` for their block
-    - each `commitmentType` has a spec that defines how relays and proposers can verify `proofs`
-    - The length of `commitmentTypes` and `payloads` must be the same
+    - each `constraintType` has a spec that defines how builders can generate `proofs` for their block
+    - each `constraintType` has a spec that defines how relays and proposers can verify `proofs`
+    - The length of `constraintTypes` and `payloads` must be the same
 
 - **Example Payload**
     ```json
@@ -482,7 +482,7 @@ Endpoint for submitting blocks with proofs of constraint validity to a Relay.
     },
     "signature": "0x86ee27935ac26ea3f6f8ed0f5bf44500809628cbe003dba4867462481d6a7ea97e13b41220b30181a38d3aeebde61de50e166e05968b03666e2708da3f8311e14848c58c0003b5e6eedc2e6de0dfe6fedbe15fe676bcd6ec867ff60a712b7166",
     "proofs": {
-        "commitmentTypes": [0x00, 0x00],
+        "constraintTypes": [0x00, 0x00],
         "payloads": ["0x5097...", "0x932587..."]
     },
     "blobs_bundle": { "commitments": [], "proofs": [], "blobs": [] }
