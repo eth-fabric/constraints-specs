@@ -435,8 +435,10 @@ components:
         constraintType:
           type: integer
           description: Constraint type
-        payload:
-          type: string
+        payloads:
+          type: array
+          items:
+            type: string
           description: Arbitrary bytes
       required:
         - constraintType
