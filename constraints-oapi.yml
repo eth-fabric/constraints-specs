@@ -192,7 +192,6 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
                           "0x123456789",  # Example proof payload for constraint type 1
                           "0x987654321fedcba0"   # Example proof payload for constraint type 2
                         ]
-                        signatureOnConstraintsRoot: "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
                     signature: "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
   /constraints/v0/builder/capabilities:
     get:
@@ -425,14 +424,11 @@ components:
       properties:
         message:
           $ref: '#/components/schemas/ConstraintsMessage'
-        signatureOnRawConstraints:
-            $ref: "./beacon-apis/types/primitive.yaml#/Signature"
-        signatureOnConstraintsRoot:
+        signature:
             $ref: "./beacon-apis/types/primitive.yaml#/Signature"
       required:
         - message
-        - signatureOnRawConstraints
-        - signatureOnConstraintsRoot
+        - signature
     SignedConstraintsToGet:
       type: object
       properties:
