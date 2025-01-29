@@ -39,8 +39,7 @@ paths:
       tags:
         - Constraints API
       summary: "Endpoint for Proposer or Gateway to submit a batch of signed constraints to the Relay"
-      description: "Endpoint for submitting a batch of constraints to the relay. The raw constraints are expected to be signed by a `delegate` BLS private key, whose corresponding public key is specified in a `SignedDelegation` message.
-      The constraints root is expected to be signed by a `delegate` BLS private key which is used in `header_with_proofs` endpoint.
+      description: "Endpoint for submitting a batch of constraints to the relay. The `ConstraintsMessage` is expected to be signed by a `delegate` BLS private key, whose corresponding public key is specified in a `SignedDelegation` message.
 
       For each `Preconfirmation` the delegate signs, they will need to create a matching `Constraint`. Collectively, a `SignedConstraints` message is posted to the Relay.
 
@@ -66,9 +65,13 @@ paths:
       - How to verify proofs of constraint validity
 
 
-      To ensure deterministic behavior for stateful constraints it is *required* for the `ConstraintsMessage.Constraints[]` to be processed in the order received.
+      Additional requirements:
 
-      `ConstraintsMessage.Receivers[]` is a list of pubkey which can access those constraints, leave the list as empty if anyone can access those constraints"
+      - To ensure deterministic behavior for stateful constraints it is *required* for the `ConstraintsMessage.Constraints[]` to be processed in the order received.
+
+      - The `ConstraintsMessage.Receivers[]` field contains a list of public keys that are authorized to access these constraints. If this list is empty, the constraints are publicly accessible to anyone."
+
+
       requestBody:
           required: true
           content:
@@ -207,24 +210,23 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
               application/json:
                   schema:
                       $ref: '#/components/schemas/ConstraintCapabilities'
-  /constraints/v0/relay/constraints:
+  /constraints/v0/relay/constraints/{slot}/{signature}:
     get:
       operationId: "getConstraints"
       tags:
         - Constraints API
       summary: "Endpoint to retrieve the signed constraints for a given slot"
-      description: "The Relay should only return signed constraints that were signed by the proposer or a gateway that was delegated to by the proposer.
-      
-      - The request should come with a `signature` which is a BLS signature on the given `slot` number. If there are restrictions on accessing constraints, the Relay will check whether
-      the signature is valid and whether the BLS pubkey is in the original `ConstraintsMessage.Receivers[]`
+      description: "For a given slot, the Relay should only return signed constraints that were signed by the L1 proposer or a gateway that was delegated to by the proposer. The request requires a `signature` which is a BLS signature over the requested `slot` number. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`.
       "
       parameters:
         - name: slot
-          in: query
+          in: path
+          required: true
           schema:
               $ref: "./beacon-apis/types/primitive.yaml#/Uint64"
         - name: signature
-          in: query
+          in: path
+          required: true
           schema:
               $ref: "./beacon-apis/types/primitive.yaml#/Signature"
       responses:
@@ -235,8 +237,8 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
                     schema:
                         type: array
                         items:
-                            $ref: '#/components/schemas/SignedConstraintsToGet'
-  /constraints/v0/relay/delegations:
+                            $ref: '#/components/schemas/SignedConstraints'
+  /constraints/v0/relay/delegations/{slot}:
     get:
       operationId: "getDelegations"
       tags:
@@ -245,10 +247,10 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
       description: "Return the active delegations for the proposer of this slot, if they exist. The Relay should only return signed delegations that were signed by the proposer."
       parameters:
         - name: slot
-          in: query
+          in: path
+          required: true
           schema:
-            type: integer
-            format: int64
+              $ref: "./beacon-apis/types/primitive.yaml#/Uint64"
       responses:
         "200":
           description: "OK"
@@ -258,23 +260,22 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
                       type: array
                       items:
                           $ref: '#/components/schemas/SignedDelegation'
-  /constraints/v0/relay/constraints_stream:
+  /constraints/v0/relay/constraints_stream/{slot}/{signature}:
     get:
       operationId: "getConstraintsStream"
       tags:
         - Constraints API
       summary: "Endpoint to retrieve an SSE stream of signed constraints"
-      description: "This endpoint is a streaming endpoint meant to reduce round-trip latency via SSE, allowing Relays to push new constraints to Builders in realtime. The Relay should only return signed constraints that were signed by the proposer or a gateway that was delegated to by the proposer.
-      
-      - The request should come with a `signature` which is a BLS signature on the given `slot` number. If there are restrictions on accessing constraints, the Relay will check whether
-      the signature is valid and whether the BLS pubkey is in the original `ConstraintsMessage.Receivers[]`"
+      description: "This endpoint is a streaming endpoint meant to reduce round-trip latency via SSE, allowing Relays to push new constraints to Builders in realtime. For a given slot, the Relay should only return signed constraints that were signed by the L1 proposer or a gateway that was delegated to by the proposer. The request requires a `signature` which is a BLS signature over the requested `slot` number. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`."
       parameters:
         - name: slot
-          in: query
+          in: path
+          required: true
           schema:
               $ref: "./beacon-apis/types/primitive.yaml#/Uint64"
         - name: signature
-          in: query
+          in: path
+          required: true
           schema:
               $ref: "./beacon-apis/types/primitive.yaml#/Signature"
       responses:
@@ -290,7 +291,7 @@ A proposer can delegate preconfirmations rights by signing a `Delegate` message 
                           data:
                               type: array
                               items:
-                                  $ref: '#/components/schemas/SignedConstraintsToGet'
+                                  $ref: '#/components/schemas/SignedConstraints'
   /constraints/v0/relay/blocks_with_proofs:
     post:
       operationId: "postBlocksWithProofs"
@@ -424,16 +425,6 @@ components:
       properties:
         message:
           $ref: '#/components/schemas/ConstraintsMessage'
-        signature:
-            $ref: "./beacon-apis/types/primitive.yaml#/Signature"
-      required:
-        - message
-        - signature
-    SignedConstraintsToGet:
-      type: object
-      properties:
-        message:
-          $ref: '#/components/schemas/ConstraintsMessageToGet'
         signature:
             $ref: "./beacon-apis/types/primitive.yaml#/Signature"
       required:
