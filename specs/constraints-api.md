@@ -40,14 +40,14 @@ Also known as the Commitments API
 
 | **Namespace** | **Method** | **Endpoint** | **Description** |
 | --- | --- | --- | --- |
-| `constraints`   | `POST` | [/constraints/v0/builder/constraints](./preconf-api.md#endpoint-constraintsv0builderconstraints)        | Endpoint for Proposer or Gateway to submit a batch of signed constraints to the Relay. |
-| `constraints`   | `POST` | [/constraints/v0/builder/delegate](./preconf-api.md#endpoint-constraintsv0builderdelegate)           | Endpoint for Proposer to delegate preconfirmation rights, or more accurately, constraint submission rights to a Gateway. |
-| `constraints`   | `GET` | [/constraints/v0/builder/header_with_proofs](./preconf-api.md#endpoint-constraintsv0builderheader_with_proofsslotparent_hashpubkey)  | Endpoint for Proposer to request a builder bid with proof of constraint validity. |
-| `constraints`   | `GET` | [/constraints/v0/builder/capabilities](./preconf-api.md#endpoint-constraintsv0buildercapabilities)         | Endpoint to retrieve the constraint capabilities of the Relay. |
-| `constraints`   | `GET` | [/constraints/v0/relay/delegations](./preconf-api.md#endpoint-constraintsv0relaydelegationsslotslot)         | Endpoint to retrieve the signed delegations for the proposer of a given slot, if it exists. |
-| `constraints`   | `GET` | [/constraints/v0/relay/constraints](./preconf-api.md#endpoint-constraintsv0relayconstraintsslotslot)         | Endpoint to retrieve the signed constraints for a given slot. |
-| `constraints`   | `GET` | [/constraints/v0/relay/constraints_stream](./preconf-api.md#endpoint-constraintsv0relayconstraints_streamslotslot)  | Endpoint to retrieve an SSE stream of signed constraints. |
-| `constraints`   | `POST` | [/constraints/v0/relay/blocks_with_proofs](./preconf-api.md#endpoint-constraintsv0relayblocks_with_proofscancellationscancellations) | Endpoint for Builder to submit a block with proofs of constraint validity to the Relay. |
+| `constraints`   | `POST` | [/constraints/v0/builder/constraints](./constraints-api.md#endpoint-constraintsv0builderconstraints)        | Endpoint for Proposer or Gateway to submit a batch of signed constraints to the Relay. |
+| `constraints`   | `POST` | [/constraints/v0/builder/delegate](./constraints-api.md#endpoint-constraintsv0builderdelegate)           | Endpoint for Proposer to delegate preconfirmation rights, or more accurately, constraint submission rights to a Gateway. |
+| `constraints`   | `GET` | [/constraints/v0/builder/header_with_proofs](./constraints-api.md#endpoint-constraintsv0builderheader_with_proofsslotparent_hashpubkey)  | Endpoint for Proposer to request a builder bid with proof of constraint validity. |
+| `constraints`   | `GET` | [/constraints/v0/builder/capabilities](./constraints-api.md#endpoint-constraintsv0buildercapabilities)         | Endpoint to retrieve the constraint capabilities of the Relay. |
+| `constraints`   | `GET` | [/constraints/v0/relay/delegations](./constraints-api.md#endpoint-constraintsv0relaydelegationsslotslot)         | Endpoint to retrieve the signed delegations for the proposer of a given slot, if it exists. |
+| `constraints`   | `GET` | [/constraints/v0/relay/constraints](./constraints-api.md#endpoint-constraintsv0relayconstraintsslotslot)         | Endpoint to retrieve the signed constraints for a given slot. |
+| `constraints`   | `GET` | [/constraints/v0/relay/constraints_stream](./constraints-api.md#endpoint-constraintsv0relayconstraints_streamslotslot)  | Endpoint to retrieve an SSE stream of signed constraints. |
+| `constraints`   | `POST` | [/constraints/v0/relay/blocks_with_proofs](./constraints-api.md#endpoint-constraintsv0relayblocks_with_proofscancellationscancellations) | Endpoint for Builder to submit a block with proofs of constraint validity to the Relay. |
 
 ---
 ![image.png](../img/preconf-api-diagram.png)
@@ -81,6 +81,7 @@ Endpoint for submitting a batch of constraints to the relay. The constraints are
         delegate: BLSPubkey
         slot: uint64
         constraints: List[Constraint]
+        receivers: List[BLSPubkey]
 
     # A constraint for transaction[s]
     class Constraint(Container):
@@ -103,6 +104,11 @@ Endpoint for submitting a batch of constraints to the relay. The constraints are
     - how to build a valid block given a `ConstraintsMessage`
     - how to generate proofs of constraint validity
     - how to verify proofs of constraint validity
+
+    Additional requirements:
+
+    - To ensure deterministic behavior for stateful constraints it is required for the ConstraintsMessage.Constraints[] to be processed in the order received.
+    - The ConstraintsMessage.Receivers[] field contains a list of public keys that are authorized to access these constraints. If this list is empty, the constraints are publicly accessible to anyone.
 ---
 
 ### Endpoint: `/constraints/v0/builder/delegate`
@@ -278,7 +284,7 @@ Endpoint to retrieve the constraint capabilities of the Relay.
 
 ## Builder-facing API
 
-### Endpoint: `/constraints/v0/relay/delegations?slot={slot}`
+### Endpoint: `/constraints/v0/relay/delegations/{slot}`
 
 Return the active delegations for the proposer of this slot, if they exist.
 
@@ -311,14 +317,15 @@ Return the active delegations for the proposer of this slot, if they exist.
 ---
 
 
-### Endpoint: `/constraints/v0/relay/constraints?slot={slot}`
+### Endpoint: `/constraints/v0/relay/constraints/{slot}/{signature}`
 
-Returns all signed constraints for a given slot, if they exist.
+Returns all signed constraints for a given slot, if they exist. The request requires a `signature` which is a BLS signature over the requested `slot` number. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`.
 
 - **Method:** `GET`
 - **Response:** `SignedConstraints[]`
 - **Parameters:**
     - `slot`: `string` (regex `[0-9]+`)
+    - `signature`: `string` (regex `[0-9a-fA-F]+`)
 - **Body:** Empty
 
 - **Example Response**
@@ -338,6 +345,10 @@ Returns all signed constraints for a given slot, if they exist.
                         "constraintType": "0x01",
                         "payload": "0x367e8208d920f2e9587369b2301de9587369b2301d0790347320302cc0301d0790347320302cc0943d5a1884560367e8208d920f2e958"
                     }
+                ],
+                "receivers": [
+                    "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a",
+                    "0x84e47f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74b"
                 ]
             },
             "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
@@ -351,14 +362,15 @@ Returns all signed constraints for a given slot, if they exist.
 
 ---
 
-### Endpoint: `/constraints/v0/relay/constraints_stream?slot={slot}`
+### Endpoint: `/constraints/v0/relay/constraints_stream/{slot}/{signature}`
 
-Returns a stream of constraints via Server-Sent Events (SSE).
+Returns a stream of constraints via Server-Sent Events (SSE). The request requires a `signature` which is a BLS signature over the requested `slot` number. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`.
 
 - **Method:** `GET`
 - **Response:**  Server-sent events containing `SignedConstraints[]` objects
 - **Parameters:**
     - `slot`: `string` (regex `[0-9]+`)
+    - `signature`: `string` (regex `[0-9a-fA-F]+`)
 - **Body:** Empty
 - **Headers**:
     - `Content-Type: text/event-stream`
@@ -383,6 +395,10 @@ Returns a stream of constraints via Server-Sent Events (SSE).
                         "constraintType": "0x01",
                         "payload": "0x367e8208d920f2e9587369b2301de9587369b2301d0790347320302cc0301d0790347320302cc0943d5a1884560367e8208d920f2e958"
                     }
+                ],
+                "receivers": [
+                    "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a",
+                    "0x84e47f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74b"
                 ]
             },
             "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
