@@ -452,24 +452,6 @@ components:
         - delegate
         - slot
         - constraints
-    ConstraintsMessageToGet:
-      type: object
-      properties:
-        proposer:
-            $ref: "./beacon-apis/types/primitive.yaml#/Pubkey"
-        delegate:
-            $ref: "./beacon-apis/types/primitive.yaml#/Pubkey"
-        slot:
-            $ref: "./beacon-apis/types/primitive.yaml#/Uint64"
-        constraints:
-          type: array
-          items:
-            $ref: '#/components/schemas/Constraint'
-      required:
-        - proposer
-        - delegate
-        - slot
-        - constraints
     Constraint:
       type: object
       properties:
