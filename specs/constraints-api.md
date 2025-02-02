@@ -35,7 +35,7 @@ Since the proposer commitment space is still nascent, our goal is to design a ge
 | Gateway        | A party which has been delegated constraint and commitment submission authority by the proposer.                                       |
 | Builder        | A party specialized in constructing execution payloads and proving constraints are followed.                                                   |
 | Relay          | A trusted party that facilitates the exchange of execution payloads between Builders and Proposers and validating constraints are followed.    |
-| RPC Router     | The component that provides an abstracted EVM RPC API endpoint for users to submit L2 transactions and get preconfirmations.                   |
+| RPC Router     | The component that provides an abstracted EVM RPC API endpoint for users to submit L2 transactions and receive proposer commitments.                   |
 
 
 # API Summary
@@ -143,7 +143,7 @@ Endpoint for a Proposer to delegate constraint submission rights to a Gateway. T
 
     A proposer can delegate constraint submission rights by signing a `Delegate` message with their `proposer` BLS private key. A `SignedDelegation` binds the `proposer` public key to the `delegate` public key and a `committer` address for the specified `slot`. During this time, the `delegate` can submit constraints to the relay on behalf of the `proposer`.
 
-    - `proposer`: The BLS public key of the proposer who is delegating preconfirmation rights.
+    - `proposer`: The BLS public key of the proposer who is delegating constraint submission rights.
     - `delegate`: The BLS public key of the gateway who is receiving constraint submission rights.
     - `committer`: The address of a committer ECDSA key for issuing commitments via the Commitments API.
     - `slot`: The slot number that a `SignedDelegation` is valid for.

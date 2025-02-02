@@ -3,11 +3,9 @@ openapi: 3.0.0
 info:
   title: "Constraints API"
   description: |
-    API governing interaction between preconfers and gateways, which enables gateways to submit constraints to builders. 
+    API governing interaction between proposers and gateways, which enables gateways to submit constraints to builders. 
 
-    All requests by default send and receive JSON, and as such should have either or both of the "Content-Type: application/json"
-    and "Accept: application/json" headers.  In addition, some requests can return data in the SSZ format.  To indicate that SSZ
-    data is required in response to a request the header "Accept: application/octet-stream" should be sent.  Note that only a subset
+    All requests by default send and receive JSON, and as such should have either or both of the "Content-Type: application/json" and "Accept: application/json" headers.  In addition, some requests can return data in the SSZ format. To indicate that SSZ data is required in response to a request the header "Accept: application/octet-stream" should be sent.  Note that only a subset
     of requests can respond with data in SSZ format; these are noted in each individual request.
 
   version: "v0.0.1 - Ethereum Constraints API Specification v0.0.1"
@@ -15,14 +13,15 @@ info:
     name: Ethereum Commitments Github
     url: https://github.com/ethereum-commitments/constraints-specs/issues
   license:
-    name: "CC0-1.0"
-    url: "https://creativecommons.org/publicdomain/zero/1.0/"
+    name: "MIT License and Apache 2.0 License"
+    url: "https://github.com/ethereum-commitments/constraints-specs/blob/main/"
+    description: "This project is licensed under both the MIT License and Apache 2.0 License."
 
 servers:
   - url: "{server_url}"
     variables:
       server_url:
-        description: "Preconf Constraints API url"
+        description: "Constraints API url"
         default: "http://localhost/"
 
 tags:
@@ -41,7 +40,7 @@ paths:
       summary: "Endpoint for Proposer or Gateway to submit a batch of signed constraints to the Relay"
       description: "Endpoint for submitting a batch of constraints to the relay. The `ConstraintsMessage` is expected to be signed by a `delegate` BLS private key, whose corresponding public key is specified in a `SignedDelegation` message.
 
-      For each `Preconfirmation` the delegate signs, they will need to create a matching `Constraint`. Collectively, a `SignedConstraints` message is posted to the Relay.
+      For each proposer commitment the delegate signs, they will need to create a matching `Constraint`. Collectively, a `SignedConstraints` message is posted to the Relay.
 
       - `constraintType`: unsigned 64-bit number between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment
 
@@ -50,11 +49,11 @@ paths:
       
       Particularly each `constraintType` would have a corresponding specification that defines:
 
-      - A schema for a `Preconfirmation` and `SignedPreconfirmation` message
+      - A schema for a `Commitment` and `SignedCommitment` message
 
       - How a `Constraint.payload` is interpreted
 
-      - How a `Constraint.payload` is created given a `SignedPreconfirmation`
+      - How a `Constraint.payload` is created given a `SignedCommitment`
 
       - The ordering of `Constraints[]`
 
@@ -89,19 +88,19 @@ paths:
       operationId: "postDelegate"
       tags:
         - Constraints API
-      summary: "Endpoint for Proposer to delegate preconfirmation rights, or more accurately, constraint submission rights to a Gateway"
+      summary: "Endpoint for Proposer to delegate constraint submission rights to a Gateway"
       description: "
-A proposer can delegate preconfirmations rights by signing a `Delegate` message with their proposer BLS private key. A `SignedDelegation` binds the proposer public key to the delegate public key and a slasher contract until after the `valid_until` slot elapses. During this time, the delegate can submit `SignedConstraints` to the relay on behalf of the proposer. While the Constraints API aims to be unopinionated about how slasher contracts are implemented, it's assumed that `SignedDelegation` messages are part of the evidence used to slash a proposer.
+A proposer can delegate constraint submission rights by signing a Delegate message with their proposer BLS private key. A SignedDelegation binds the proposer public key to the delegate public key and a committer address for the specified slot. During this time, the delegate can submit constraints to the relay on behalf of the proposer.
 
-    - `proposer`: The BLS public key of the proposer who is delegating preconfirmation rights
-    
-    - `delegate`: The BLS public key of the gateway who is receiving preconfirmation rights
-    
-    - `slasher`: The address of a slasher contract containing a `slash()` function to penalize a proposer who has violated constraints (i.e., reneged on a preconf)
-    
-    - `valid_until`: slot number (inclusive) that a `SignedDelegation` is considered valid until
-    
-    - `metadata`: Additional opaque byte array reserved for and interpreted by the `slash()` function and/or the gateway (e.g., gas limit, blob limit, chain ID, preconfirmation type)
+    - `proposer`: The BLS public key of the proposer who is delegating constraint submission rights.
+
+    - `delegate`: The BLS public key of the gateway who is receiving constraint submission rights.
+
+    - `committer`: The address of a committer ECDSA key for issuing commitments via the Commitments API.
+
+    - `slot`: The slot number that a `SignedDelegation` is valid for.
+
+    - `metadata`: Additional opaque byte array reserved for Gateways to interpret.
 
 
       "
@@ -405,20 +404,19 @@ components:
           $ref: './beacon-apis/types/primitive.yaml#/Pubkey'
         delegate:
           $ref: './beacon-apis/types/primitive.yaml#/Pubkey'
-        slasher:
-          type: string
-          description: Ethereum address
-        valid_until:
-          type: integer
-          description: Slot
+        committer:
+          $ref: './beacon-apis/types/primitive.yaml#/ExecutionAddress'
+        slot:
+          $ref: './beacon-apis/types/primitive.yaml#/Uint64'
+          description: Slot number
         metadata:
           type: string
           description: Arbitrary bytes
       required:
         - proposer
         - delegate
-        - slasher
-        - valid_until
+        - committer
+        - slot
         - metadata
     SignedConstraints:
       type: object
