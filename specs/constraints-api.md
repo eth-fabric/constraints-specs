@@ -1,36 +1,38 @@
-# Preconfirmations API Specification
+# Constraints API Specification
 
 ## Abstract
 
-A proposed generic API specification to support Ethereum and Layer 2 preconfirmations. The API extends the existing PBS architecture and [builder-specs](https://github.com/ethereum/builder-specs). This specification allows proposers to offer preconfirmations to users either directly or by delegating the privilege to a Gateway.
+A proposed generic API that allows constraints to be specified during the block building process, enabling the existing PBS architecture to more easily support arbitrary proposer commitment protocols.
 
 ## Motivation
 
-Ethereum’s 12 second block time may be restrictive for particular use cases and is especially inhibitive for L2s that rely on fast confirmations. One option is to reduce the block time. However, this is a very large lift and would likely require multiple hard forks. This alternative option extends the existing PBS architecture, which allows proposers or constraint delegates (Gateways) to offer transaction preconfirmations to users.
+Many Ethereum proposers already delegate their block-building responsibilities to more sophisticated actors via PBS, but today, this delegation is largely all-or-nothing, giving proposers little control over individual transaction inclusion or ordering.
+
+We want proposers to have the ability to make more fine-grained commitments. One important example is preconfirmations, where proposers can guarantee the inclusion or execution of transactions within their slots. This approach offers a pathway to faster user experiences without requiring changes to Ethereum’s core protocol. Instead of implementing a hard fork, we can enhance the existing out-of-protocol PBS architecture to support more flexible block-building commitments.
+
+Since the proposer commitment space is still nascent, our goal is to design a generic and future-proof API that can accommodate arbitrary proposer commitments, including but not limited to preconfirmations.
 
 
 ## API Scope
 
-**In Scope**
+**In Scope** (Constraints API)
 
-- the delegation from proposers to gateways
-- the submission of constraints
-- the retrieval of constraints
+- the delegation of block-building responsibilities from proposers to gateways
+- the submission of constraints to the relay
+- the retrieval of constraints from the relay
+- the submission of blocks and proofs of constraint validity to the relay
+- the retrieval of block headers and proofs of constraint validity from the relay
 
-Also known as the Constraints API
-
-**Out of Scope**
+**Out of Scope** (Commitments API)
 - Any interaction between third parties (Users, RPC Router, etc) and the Gateway.
 - Commitments from Gateways to third parties
-
-Also known as the Commitments API
 
 # Terminology
 
 | Term           | Description                                                                                                                                    |
 |----------------|------------------------------------------------------------------------------------------------------------------------------------------------|
-| Preconfer      | A proposer who registers to offer preconfirmations is a preconfer. Any party the proposer delegates preconf authority to is also a preconfer.  |
-| Gateway        | A party which has been delegated preconf constraint and commitment submission authority by the proposer.                                       |
+| Proposer      | An Ethereum validator with the rights to propose an L1 block. |
+| Gateway        | A party which has been delegated constraint and commitment submission authority by the proposer.                                       |
 | Builder        | A party specialized in constructing execution payloads and proving constraints are followed.                                                   |
 | Relay          | A trusted party that facilitates the exchange of execution payloads between Builders and Proposers and validating constraints are followed.    |
 | RPC Router     | The component that provides an abstracted EVM RPC API endpoint for users to submit L2 transactions and get preconfirmations.                   |
@@ -41,7 +43,7 @@ Also known as the Commitments API
 | **Namespace** | **Method** | **Endpoint** | **Description** |
 | --- | --- | --- | --- |
 | `constraints`   | `POST` | [/constraints/v0/builder/constraints](./constraints-api.md#endpoint-constraintsv0builderconstraints)        | Endpoint for Proposer or Gateway to submit a batch of signed constraints to the Relay. |
-| `constraints`   | `POST` | [/constraints/v0/builder/delegate](./constraints-api.md#endpoint-constraintsv0builderdelegate)           | Endpoint for Proposer to delegate preconfirmation rights, or more accurately, constraint submission rights to a Gateway. |
+| `constraints`   | `POST` | [/constraints/v0/builder/delegate](./constraints-api.md#endpoint-constraintsv0builderdelegate)           | Endpoint for Proposer to delegate constraint submission rights to a Gateway. |
 | `constraints`   | `GET` | [/constraints/v0/builder/header_with_proofs](./constraints-api.md#endpoint-constraintsv0builderheader_with_proofsslotparent_hashpubkey)  | Endpoint for Proposer to request a builder bid with proof of constraint validity. |
 | `constraints`   | `GET` | [/constraints/v0/builder/capabilities](./constraints-api.md#endpoint-constraintsv0buildercapabilities)         | Endpoint to retrieve the constraint capabilities of the Relay. |
 | `constraints`   | `GET` | [/constraints/v0/relay/delegations](./constraints-api.md#endpoint-constraintsv0relaydelegationsslotslot)         | Endpoint to retrieve the signed delegations for the proposer of a given slot, if it exists. |
