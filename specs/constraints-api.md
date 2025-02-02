@@ -115,7 +115,7 @@ Endpoint for submitting a batch of constraints to the relay. The constraints are
 
 ### Endpoint: `/constraints/v0/builder/delegate`
 
-Endpoint for a Proposer to delegate constraint submission rights to a Gateway.
+Endpoint for a Proposer to delegate constraint submission rights to a Gateway. The `SignedDelegation` message is posted to a Relay who makes this available.
 
 - **Method:** `POST`
 - **Response:** Empty
@@ -134,20 +134,20 @@ Endpoint for a Proposer to delegate constraint submission rights to a Gateway.
     class Delegation(Container):
         proposer: BLSPubkey
         delegate: BLSPubkey
-        slasher: Address
-        valid_until: Slot
+        committer: Address
+        slot: Slot
         metadata: Bytes
     ```
 
 - **Description**
 
-    A proposer can delegate preconfirmations rights by signing a `Delegate` message with their `proposer` BLS private key. A `SignedDelegation` binds the `proposer` public key to the `delegate` public key and a `slasher` contract until after the `valid_until` slot elapses. During this time, the `delegate` can submit constraints to the relay on behalf of the `proposer`.
+    A proposer can delegate constraint submission rights by signing a `Delegate` message with their `proposer` BLS private key. A `SignedDelegation` binds the `proposer` public key to the `delegate` public key and a `committer` address for the specified `slot`. During this time, the `delegate` can submit constraints to the relay on behalf of the `proposer`.
 
     - `proposer`: The BLS public key of the proposer who is delegating preconfirmation rights.
-    - `delegate`: The BLS public key of the gateway who is receiving preconfirmation rights.
-    - `slasher`: The address of a slasher contract containing a slashing function to penalize a proposer who has violated constraints (i.e., reneged on a preconf).
-    - `valid_until`: slot number (inclusive) that a `SignedDelegation` is considered valid until
-    - `metadata`: Additional opaque byte array reserved for and interpreted by the slashing function and/or the gateway (e.g., gas limit, blob limit, chain id, preconf type)
+    - `delegate`: The BLS public key of the gateway who is receiving constraint submission rights.
+    - `committer`: The address of a committer ECDSA key for issuing commitments via the Commitments API.
+    - `slot`: The slot number that a `SignedDelegation` is valid for.
+    - `metadata`: Additional opaque byte array reserved for Gateways to interpret.
 
     While the Constraints API aims to be unopinionated about how slasher contracts are implemented, it's assumed that `SignedDelegation` messages are part of the evidence used to slash a proposer.
 ---
@@ -303,8 +303,8 @@ Return the active delegations for the proposer of this slot, if they exist.
             "message": {
                 "proposer": "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a",
                 "delegate": "0x84e47f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74b",
-                "slasher": "0xabcf8e0d4e9587369b2301d0790347320302cc09",
-                "valid_until": "12345",
+                "committer": "0xabcf8e0d4e9587369b2301d0790347320302cc09",
+                "slot": "12345",
                 "metadata": "0xe9587369b2301d0790347320302cc069b2301d0790347320302cc0943d5a1884560367e8208d920f2e9587369b2301de9587369b2301d0790347320302cc0"
             },
             "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
