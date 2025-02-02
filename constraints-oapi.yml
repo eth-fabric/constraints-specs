@@ -15,7 +15,6 @@ info:
   license:
     name: "MIT License and Apache 2.0 License"
     url: "https://github.com/ethereum-commitments/constraints-specs/blob/main/"
-    description: "This project is licensed under both the MIT License and Apache 2.0 License."
 
 servers:
   - url: "{server_url}"
