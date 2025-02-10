@@ -208,13 +208,13 @@ A proposer can delegate constraint submission rights by signing a Delegate messa
               application/json:
                   schema:
                       $ref: '#/components/schemas/ConstraintCapabilities'
-  /constraints/v0/relay/constraints/{slot}/{signature}:
+  /constraints/v0/relay/constraints/{slot}:
     get:
       operationId: "getConstraints"
       tags:
         - Constraints API
       summary: "Endpoint to retrieve the signed constraints for a given slot"
-      description: "For a given slot, the Relay should only return signed constraints that were signed by the L1 proposer or a gateway that was delegated to by the proposer. The request requires a `signature` which is a BLS signature over the requested `slot` number. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`.
+      description: "For a given slot, the Relay should only return signed constraints that were signed by the L1 proposer or a gateway that was delegated to by the proposer. The request requires authorization via the `X-Receiver-Signature` header which is a BLS signature over the requested `slot` number. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`.
       "
       parameters:
         - name: slot
@@ -222,8 +222,8 @@ A proposer can delegate constraint submission rights by signing a Delegate messa
           required: true
           schema:
               $ref: "./beacon-apis/types/primitive.yaml#/Uint64"
-        - name: signature
-          in: path
+        - name: X-Receiver-Signature
+          in: header
           required: true
           schema:
               $ref: "./beacon-apis/types/primitive.yaml#/Signature"
@@ -258,21 +258,21 @@ A proposer can delegate constraint submission rights by signing a Delegate messa
                       type: array
                       items:
                           $ref: '#/components/schemas/SignedDelegation'
-  /constraints/v0/relay/constraints_stream/{slot}/{signature}:
+  /constraints/v0/relay/constraints_stream/{slot}:
     get:
       operationId: "getConstraintsStream"
       tags:
         - Constraints API
       summary: "Endpoint to retrieve an SSE stream of signed constraints"
-      description: "This endpoint is a streaming endpoint meant to reduce round-trip latency via SSE, allowing Relays to push new constraints to Builders in realtime. For a given slot, the Relay should only return signed constraints that were signed by the L1 proposer or a gateway that was delegated to by the proposer. The request requires a `signature` which is a BLS signature over the requested `slot` number. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`."
+      description: "This endpoint is a streaming endpoint meant to reduce round-trip latency via SSE, allowing Relays to push new constraints to Builders in realtime. For a given slot, the Relay should only return signed constraints that were signed by the L1 proposer or a gateway that was delegated to by the proposer. The request requires authorization via the `X-Receiver-Signature` header which is a BLS signature over the requested `slot` number. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`."
       parameters:
         - name: slot
           in: path
           required: true
           schema:
               $ref: "./beacon-apis/types/primitive.yaml#/Uint64"
-        - name: signature
-          in: path
+        - name: X-Receiver-Signature
+          in: header
           required: true
           schema:
               $ref: "./beacon-apis/types/primitive.yaml#/Signature"

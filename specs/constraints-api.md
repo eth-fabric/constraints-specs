@@ -319,16 +319,18 @@ Return the active delegations for the proposer of this slot, if they exist.
 ---
 
 
-### Endpoint: `/constraints/v0/relay/constraints/{slot}/{signature}`
+### Endpoint: `/constraints/v0/relay/constraints/{slot}`
 
-Returns all signed constraints for a given slot, if they exist. The request requires a `signature` which is a BLS signature over the requested `slot` number. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`.
+Returns all signed constraints for a given slot, if they exist. The request requires authorization via the `X-Receiver-Signature` header which is a BLS signature over the requested `slot` number. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`.
 
 - **Method:** `GET`
 - **Response:** `SignedConstraints[]`
 - **Parameters:**
     - `slot`: `string` (regex `[0-9]+`)
-    - `signature`: `string` (regex `[0-9a-fA-F]+`)
 - **Body:** Empty
+- **Headers:**
+    - `Content-Type: application/json`
+    - `X-Receiver-Signature: <BLS signature>`
 
 - **Example Response**
     ```json
@@ -364,21 +366,20 @@ Returns all signed constraints for a given slot, if they exist. The request requ
 
 ---
 
-### Endpoint: `/constraints/v0/relay/constraints_stream/{slot}/{signature}`
+### Endpoint: `/constraints/v0/relay/constraints_stream/{slot}`
 
-Returns a stream of constraints via Server-Sent Events (SSE). The request requires a `signature` which is a BLS signature over the requested `slot` number. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`.
+Returns a stream of constraints via Server-Sent Events (SSE). The request requires authorization via the `X-Receiver-Signature` header which is a BLS signature over the requested `slot` number. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`.
 
 - **Method:** `GET`
 - **Response:**  Server-sent events containing `SignedConstraints[]` objects
 - **Parameters:**
     - `slot`: `string` (regex `[0-9]+`)
-    - `signature`: `string` (regex `[0-9a-fA-F]+`)
 - **Body:** Empty
 - **Headers**:
     - `Content-Type: text/event-stream`
     - `Cache-Control: no-cache`
     - `Connection: keep-alive`
-
+    - `X-Receiver-Signature: <BLS signature>`
 - **Example Response**
     ```json
     event: json
