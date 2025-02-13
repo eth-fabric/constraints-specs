@@ -8,7 +8,7 @@ A proposed generic API that allows constraints to be specified during the block 
 
 Many Ethereum proposers already delegate their block-building responsibilities to more sophisticated actors via PBS, but today, this delegation is largely all-or-nothing, giving proposers little control over individual transaction inclusion or ordering.
 
-We want proposers to have the ability to make more fine-grained commitments. One important example is preconfirmations, where proposers can guarantee the inclusion or execution of transactions within their slots. This approach offers a pathway to faster user experiences without requiring changes to Ethereum’s core protocol. Instead of implementing a hard fork, we can enhance the existing out-of-protocol PBS architecture to support more flexible block-building commitments.
+We want proposers to have the ability to make more fine-grained commitments. One important example is preconfirmations, where proposers can give ahead-of-time guarantees about the inclusion or execution of transactions within their slots. This approach offers a pathway to faster user experiences without requiring changes to Ethereum’s core protocol (i.e., 2 second slot times). Instead of implementing a hard fork, we can enhance the existing out-of-protocol PBS architecture to support more flexible proposer commitments.
 
 Since the proposer commitment space is still nascent, our goal is to design a generic and future-proof API that can accommodate arbitrary proposer commitments, including but not limited to preconfirmations.
 
@@ -24,19 +24,20 @@ Since the proposer commitment space is still nascent, our goal is to design a ge
 - the retrieval of block headers and proofs of constraint validity from the relay
 
 **Out of Scope** (Commitments API)
-- Any interaction between third parties (Users, RPC Router, etc) and the Gateway.
-- Commitments from Gateways to third parties
+- any interaction between third parties (Users, Wallets, etc) and the Gateway.
+- commitments from Gateways to third parties
 
 # Terminology
 
 | Term           | Description                                                                                                                                    |
 |----------------|------------------------------------------------------------------------------------------------------------------------------------------------|
-| Proposer      | An Ethereum validator with the rights to propose an L1 block. |
-| Gateway        | A party which has been delegated constraint and commitment submission authority by the proposer.                                       |
-| Builder        | A party specialized in constructing execution payloads and proving constraints are followed.                                                   |
-| Relay          | A trusted party that facilitates the exchange of execution payloads between Builders and Proposers and validating constraints are followed.    |
-| RPC Router     | The component that provides an abstracted EVM RPC API endpoint for users to submit L2 transactions and receive proposer commitments.                   |
-
+| Proposer       | An Ethereum validator with the rights to propose an L1 block. |
+| Commitment     | A binding message commiting the proposer to perform an action as part of their block proposal duties. |
+| Constraint     | Instructions for block builders to build blocks that adhere to proposer commitments. |
+| Delegation     | A binding message signed by a Proposer to delegate Constraint and Commitment submission authority. Self-delegations are allowed but if delegated to a third party, they are referred to as a Gateway. |
+| Gateway        | The third party with Constraint and Commitment submission authority granted by the Proposer. |
+| Builder        | A party specialized in constructing Execution Payloads and providing proofs that Constraints are followed. |
+| Relay          | A party that facilitates message passing. This includes the fair exchange of Execution Payloads and Constraints proofs between Builders and Proposers, Constraints between Gateways and Builders, and Delegations between Proposers and Gateways.    |
 
 # API Summary
 
@@ -52,7 +53,7 @@ Since the proposer commitment space is still nascent, our goal is to design a ge
 | `constraints`   | `POST` | [/constraints/v0/relay/blocks_with_proofs](./constraints-api.md#endpoint-constraintsv0relayblocks_with_proofscancellationscancellations) | Endpoint for Builder to submit a block with proofs of constraint validity to the Relay. |
 
 ---
-![image.png](../img/preconf-api-diagram.png)
+![image.png](../img/constraints-api-diagram.png)
 ---
 
 # Constraints API Endpoints
@@ -93,15 +94,15 @@ Endpoint for submitting a batch of constraints to the relay. The constraints are
 
 - **Description**
 
-    For each `Preconfirmation` the delegate signs, they will need to create a matching `Constraint`. Collectively, a `SignedConstraints` message is posted to the relay.
+    For each `Commitment` the delegate signs, they will need to create a matching `Constraint`. Collectively, a `SignedConstraints` message is posted to the relay.
 
     - `constraintType`: unsigned 64-bit number between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment
     - `payload`: opaque byte array whose interpretation is dependent on the `constraintType`
 
     Particularly each `constraintType` would have a corresponding spec that defines:
-    - a schema for a `Preconfirmation` and `SignedPreconfirmation` message
+    - a schema for a `Commitment` and `SignedCommitment` message
     - how a `Constraint.payload` is interpreted
-    - how a `Constraint.payload` is created given a `SignedPreconfirmation`
+    - how a `Constraint.payload` is created given a `SignedCommitment`
     - the ordering of `constraints[]`
     - how to build a valid block given a `ConstraintsMessage`
     - how to generate proofs of constraint validity
@@ -111,6 +112,20 @@ Endpoint for submitting a batch of constraints to the relay. The constraints are
 
     - To ensure deterministic behavior for stateful constraints it is required for the ConstraintsMessage.Constraints[] to be processed in the order received.
     - The ConstraintsMessage.Receivers[] field contains a list of public keys that are authorized to access these constraints. If this list is empty, the constraints are publicly accessible to anyone.
+
+- **Example**
+
+    While the Commitments API is out of scope, the following example demonstrates how a proposer might use the Constraints API to commit to a set of transactions.
+
+    - Assume a user wants their L1 transaction to be included at slot `N`.
+    - The user's wallet creates a `Commitment` message and sends it to the delegated Gateway via the Commitments API, receiving a `SignedCommitment` in return.
+    - The Gateway creates a `Constraint` message, where the `constraintType` corresponds to the `Commitment` - in this case a generic L1 inclusion preconfirmation.
+    - After aggregating other commitments, the Gateway sends the `SignedConstraints` to the Relay, who makes them available to Builders.
+    - Builders will compete to build the best block that satisfies the constraints.
+    - Before committing to a builder's block, the proposer can verify the constraints were followed by checking the constraint proofs against the block header.
+    - Upon block proposal, the user's preconfirmed transaction is included in the L1.
+
+    As demonstrated by this example, the Constraints API does not have any opinions on the exact nature of the `Constraint` or `Commitment` messages, rather the schema is left generic to support arbitrary proposer commitments. Inevitably there will be some common `commitmentTypes` and `constraintTypes` that the community can align on but this is out of scope for the Constraints API.
 ---
 
 ### Endpoint: `/constraints/v0/builder/delegate`
@@ -517,19 +532,15 @@ autonumber
     participant Builder
     participant Relay
     participant Gateway
-    participant RPC Router
     participant Wallet
     participant User
 
     Proposer->>Relay: POST /delegate
     Builder->>Relay: GET /delegate
-    RPC Router->>Relay: GET /delegate
     User->>Wallet: POST /eth_sendTransaction
-    Wallet->>RPC Router: POST /eth_sendTransaction
-    RPC Router->>Gateway: POST /eth_sendTransaction
+    Wallet->>Gateway: POST /eth_sendTransaction
     Gateway->>Gateway: Process transaction
-    Gateway->>RPC Router: SignedCommitment (preconf)
-    RPC Router->>Wallet: SignedCommitment (preconf)
+    Gateway->>Wallet: SignedCommitment (preconf)
     Wallet->>User: SignedCommitment (preconf)
     Loop for each SignedCommitment
         Gateway->>Gateway: Create Constraint
