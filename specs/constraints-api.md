@@ -1,56 +1,59 @@
-# Preconfirmations API Specification
+# Constraints API Specification
 
 ## Abstract
 
-A proposed generic API specification to support Ethereum and Layer 2 preconfirmations. The API extends the existing PBS architecture and [builder-specs](https://github.com/ethereum/builder-specs). This specification allows proposers to offer preconfirmations to users either directly or by delegating the privilege to a Gateway.
+A proposed generic API that allows constraints to be specified during the block building process, enabling the existing PBS architecture to more easily support arbitrary proposer commitment protocols.
 
 ## Motivation
 
-Ethereum’s 12 second block time may be restrictive for particular use cases and is especially inhibitive for L2s that rely on fast confirmations. One option is to reduce the block time. However, this is a very large lift and would likely require multiple hard forks. This alternative option extends the existing PBS architecture, which allows proposers or constraint delegates (Gateways) to offer transaction preconfirmations to users.
+Many Ethereum proposers already delegate their block-building responsibilities to more sophisticated actors via PBS, but today, this delegation is largely all-or-nothing, giving proposers little control over individual transaction inclusion or ordering.
+
+We want proposers to have the ability to make more fine-grained commitments. One important example is preconfirmations, where proposers can give ahead-of-time guarantees about the inclusion or execution of transactions within their slots. This approach offers a pathway to faster user experiences without requiring changes to Ethereum’s core protocol (i.e., 2 second slot times). Instead of implementing a hard fork, we can enhance the existing out-of-protocol PBS architecture to support more flexible proposer commitments.
+
+Since the proposer commitment space is still nascent, our goal is to design a generic and future-proof API that can accommodate arbitrary proposer commitments, including but not limited to preconfirmations.
 
 
 ## API Scope
 
-**In Scope**
+**In Scope** (Constraints API)
 
-- the delegation from proposers to gateways
-- the submission of constraints
-- the retrieval of constraints
+- the delegation of block-building responsibilities from proposers to gateways
+- the submission of constraints to the relay
+- the retrieval of constraints from the relay
+- the submission of blocks and proofs of constraint validity to the relay
+- the retrieval of block headers and proofs of constraint validity from the relay
 
-Also known as the Constraints API
-
-**Out of Scope**
-- Any interaction between third parties (Users, RPC Router, etc) and the Gateway.
-- Commitments from Gateways to third parties
-
-Also known as the Commitments API
+**Out of Scope** (Commitments API)
+- any interaction between third parties (Users, Wallets, etc) and the Gateway.
+- commitments from Gateways to third parties
 
 # Terminology
 
 | Term           | Description                                                                                                                                    |
 |----------------|------------------------------------------------------------------------------------------------------------------------------------------------|
-| Preconfer      | A proposer who registers to offer preconfirmations is a preconfer. Any party the proposer delegates preconf authority to is also a preconfer.  |
-| Gateway        | A party which has been delegated preconf constraint and commitment submission authority by the proposer.                                       |
-| Builder        | A party specialized in constructing execution payloads and proving constraints are followed.                                                   |
-| Relay          | A trusted party that facilitates the exchange of execution payloads between Builders and Proposers and validating constraints are followed.    |
-| RPC Router     | The component that provides an abstracted EVM RPC API endpoint for users to submit L2 transactions and get preconfirmations.                   |
-
+| Proposer       | An Ethereum validator with the rights to propose an L1 block. |
+| Commitment     | A binding message commiting the proposer to perform an action as part of their block proposal duties. |
+| Constraint     | Instructions for block builders to build blocks that adhere to proposer commitments. |
+| Delegation     | A binding message signed by a Proposer to delegate Constraint and Commitment submission authority. Self-delegations are allowed but if delegated to a third party, they are referred to as a Gateway. |
+| Gateway        | The third party with Constraint and Commitment submission authority granted by the Proposer. |
+| Builder        | A party specialized in constructing Execution Payloads and providing proofs that Constraints are followed. |
+| Relay          | A party that facilitates message passing. This includes the fair exchange of Execution Payloads and Constraints proofs between Builders and Proposers, Constraints between Gateways and Builders, and Delegations between Proposers and Gateways.    |
 
 # API Summary
 
 | **Namespace** | **Method** | **Endpoint** | **Description** |
 | --- | --- | --- | --- |
-| `constraints`   | `POST` | [/constraints/v0/builder/constraints](./preconf-api.md#endpoint-constraintsv0builderconstraints)        | Endpoint for Proposer or Gateway to submit a batch of signed constraints to the Relay. |
-| `constraints`   | `POST` | [/constraints/v0/builder/delegate](./preconf-api.md#endpoint-constraintsv0builderdelegate)           | Endpoint for Proposer to delegate preconfirmation rights, or more accurately, constraint submission rights to a Gateway. |
-| `constraints`   | `GET` | [/constraints/v0/builder/header_with_proofs](./preconf-api.md#endpoint-constraintsv0builderheader_with_proofsslotparent_hashpubkey)  | Endpoint for Proposer to request a builder bid with proof of constraint validity. |
-| `constraints`   | `GET` | [/constraints/v0/builder/capabilities](./preconf-api.md#endpoint-constraintsv0buildercapabilities)         | Endpoint to retrieve the constraint capabilities of the Relay. |
-| `constraints`   | `GET` | [/constraints/v0/relay/delegations](./preconf-api.md#endpoint-constraintsv0relaydelegationsslotslot)         | Endpoint to retrieve the signed delegations for the proposer of a given slot, if it exists. |
-| `constraints`   | `GET` | [/constraints/v0/relay/constraints](./preconf-api.md#endpoint-constraintsv0relayconstraintsslotslot)         | Endpoint to retrieve the signed constraints for a given slot. |
-| `constraints`   | `GET` | [/constraints/v0/relay/constraints_stream](./preconf-api.md#endpoint-constraintsv0relayconstraints_streamslotslot)  | Endpoint to retrieve an SSE stream of signed constraints. |
-| `constraints`   | `POST` | [/constraints/v0/relay/blocks_with_proofs](./preconf-api.md#endpoint-constraintsv0relayblocks_with_proofscancellationscancellations) | Endpoint for Builder to submit a block with proofs of constraint validity to the Relay. |
+| `constraints`   | `POST` | [/constraints/v0/builder/constraints](./constraints-api.md#endpoint-constraintsv0builderconstraints)        | Endpoint for Proposer or Gateway to submit a batch of signed constraints to the Relay. |
+| `constraints`   | `POST` | [/constraints/v0/builder/delegate](./constraints-api.md#endpoint-constraintsv0builderdelegate)           | Endpoint for Proposer to delegate constraint submission rights to a Gateway. |
+| `constraints`   | `GET` | [/constraints/v0/builder/header_with_proofs](./constraints-api.md#endpoint-constraintsv0builderheader_with_proofsslotparent_hashpubkey)  | Endpoint for Proposer to request a builder bid with proof of constraint validity. |
+| `constraints`   | `GET` | [/constraints/v0/builder/capabilities](./constraints-api.md#endpoint-constraintsv0buildercapabilities)         | Endpoint to retrieve the constraint capabilities of the Relay. |
+| `constraints`   | `GET` | [/constraints/v0/relay/delegations](./constraints-api.md#endpoint-constraintsv0relaydelegationsslotslot)         | Endpoint to retrieve the signed delegations for the proposer of a given slot, if it exists. |
+| `constraints`   | `GET` | [/constraints/v0/relay/constraints](./constraints-api.md#endpoint-constraintsv0relayconstraintsslotslot)         | Endpoint to retrieve the signed constraints for a given slot. |
+| `constraints`   | `GET` | [/constraints/v0/relay/constraints_stream](./constraints-api.md#endpoint-constraintsv0relayconstraints_streamslotslot)  | Endpoint to retrieve an SSE stream of signed constraints. |
+| `constraints`   | `POST` | [/constraints/v0/relay/blocks_with_proofs](./constraints-api.md#endpoint-constraintsv0relayblocks_with_proofscancellationscancellations) | Endpoint for Builder to submit a block with proofs of constraint validity to the Relay. |
 
 ---
-![image.png](../img/preconf-api-diagram.png)
+![image.png](../img/constraints-api-diagram.png)
 ---
 
 # Constraints API Endpoints
@@ -81,6 +84,7 @@ Endpoint for submitting a batch of constraints to the relay. The constraints are
         delegate: BLSPubkey
         slot: uint64
         constraints: List[Constraint]
+        receivers: List[BLSPubkey]
 
     # A constraint for transaction[s]
     class Constraint(Container):
@@ -90,24 +94,43 @@ Endpoint for submitting a batch of constraints to the relay. The constraints are
 
 - **Description**
 
-    For each `Preconfirmation` the delegate signs, they will need to create a matching `Constraint`. Collectively, a `SignedConstraints` message is posted to the relay.
+    For each `Commitment` the delegate signs, they will need to create a matching `Constraint`. Collectively, a `SignedConstraints` message is posted to the relay.
 
     - `constraintType`: unsigned 64-bit number between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment
     - `payload`: opaque byte array whose interpretation is dependent on the `constraintType`
 
     Particularly each `constraintType` would have a corresponding spec that defines:
-    - a schema for a `Preconfirmation` and `SignedPreconfirmation` message
+    - a schema for a `Commitment` and `SignedCommitment` message
     - how a `Constraint.payload` is interpreted
-    - how a `Constraint.payload` is created given a `SignedPreconfirmation`
+    - how a `Constraint.payload` is created given a `SignedCommitment`
     - the ordering of `constraints[]`
     - how to build a valid block given a `ConstraintsMessage`
     - how to generate proofs of constraint validity
     - how to verify proofs of constraint validity
+
+    Additional requirements:
+
+    - To ensure deterministic behavior for stateful constraints it is required for the ConstraintsMessage.Constraints[] to be processed in the order received.
+    - The ConstraintsMessage.Receivers[] field contains a list of public keys that are authorized to access these constraints. If this list is empty, the constraints are publicly accessible to anyone.
+
+- **Example**
+
+    While the Commitments API is out of scope, the following example demonstrates how a proposer might use the Constraints API to commit to a set of transactions.
+
+    - Assume a user wants their L1 transaction to be included at slot `N`.
+    - The user's wallet creates a `Commitment` message and sends it to the delegated Gateway via the Commitments API, receiving a `SignedCommitment` in return.
+    - The Gateway creates a `Constraint` message, where the `constraintType` corresponds to the `Commitment` - in this case a generic L1 inclusion preconfirmation.
+    - After aggregating other commitments, the Gateway sends the `SignedConstraints` to the Relay, who makes them available to Builders.
+    - Builders will compete to build the best block that satisfies the constraints.
+    - Before committing to a builder's block, the proposer can verify the constraints were followed by checking the constraint proofs against the block header.
+    - Upon block proposal, the user's preconfirmed transaction is included in the L1.
+
+    As demonstrated by this example, the Constraints API does not have any opinions on the exact nature of the `Constraint` or `Commitment` messages, rather the schema is left generic to support arbitrary proposer commitments. Inevitably there will be some common `commitmentTypes` and `constraintTypes` that the community can align on but this is out of scope for the Constraints API.
 ---
 
 ### Endpoint: `/constraints/v0/builder/delegate`
 
-Endpoint for a Proposer to delegate constraint submission rights to a Gateway.
+Endpoint for a Proposer to delegate constraint submission rights to a Gateway. The `SignedDelegation` message is posted to a Relay who makes this available.
 
 - **Method:** `POST`
 - **Response:** Empty
@@ -126,20 +149,20 @@ Endpoint for a Proposer to delegate constraint submission rights to a Gateway.
     class Delegation(Container):
         proposer: BLSPubkey
         delegate: BLSPubkey
-        slasher: Address
-        valid_until: Slot
+        committer: Address
+        slot: Slot
         metadata: Bytes
     ```
 
 - **Description**
 
-    A proposer can delegate preconfirmations rights by signing a `Delegate` message with their `proposer` BLS private key. A `SignedDelegation` binds the `proposer` public key to the `delegate` public key and a `slasher` contract until after the `valid_until` slot elapses. During this time, the `delegate` can submit constraints to the relay on behalf of the `proposer`.
+    A proposer can delegate constraint submission rights by signing a `Delegate` message with their `proposer` BLS private key. A `SignedDelegation` binds the `proposer` public key to the `delegate` public key and a `committer` address for the specified `slot`. During this time, the `delegate` can submit constraints to the relay on behalf of the `proposer`.
 
-    - `proposer`: The BLS public key of the proposer who is delegating preconfirmation rights.
-    - `delegate`: The BLS public key of the gateway who is receiving preconfirmation rights.
-    - `slasher`: The address of a slasher contract containing a slashing function to penalize a proposer who has violated constraints (i.e., reneged on a preconf).
-    - `valid_until`: slot number (inclusive) that a `SignedDelegation` is considered valid until
-    - `metadata`: Additional opaque byte array reserved for and interpreted by the slashing function and/or the gateway (e.g., gas limit, blob limit, chain id, preconf type)
+    - `proposer`: The BLS public key of the proposer who is delegating constraint submission rights.
+    - `delegate`: The BLS public key of the gateway who is receiving constraint submission rights.
+    - `committer`: The address of a committer ECDSA key for issuing commitments via the Commitments API.
+    - `slot`: The slot number that a `SignedDelegation` is valid for.
+    - `metadata`: Additional opaque byte array reserved for Gateways to interpret.
 
     While the Constraints API aims to be unopinionated about how slasher contracts are implemented, it's assumed that `SignedDelegation` messages are part of the evidence used to slash a proposer.
 ---
@@ -278,7 +301,7 @@ Endpoint to retrieve the constraint capabilities of the Relay.
 
 ## Builder-facing API
 
-### Endpoint: `/constraints/v0/relay/delegations?slot={slot}`
+### Endpoint: `/constraints/v0/relay/delegations/{slot}`
 
 Return the active delegations for the proposer of this slot, if they exist.
 
@@ -295,8 +318,8 @@ Return the active delegations for the proposer of this slot, if they exist.
             "message": {
                 "proposer": "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a",
                 "delegate": "0x84e47f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74b",
-                "slasher": "0xabcf8e0d4e9587369b2301d0790347320302cc09",
-                "valid_until": "12345",
+                "committer": "0xabcf8e0d4e9587369b2301d0790347320302cc09",
+                "slot": "12345",
                 "metadata": "0xe9587369b2301d0790347320302cc069b2301d0790347320302cc0943d5a1884560367e8208d920f2e9587369b2301de9587369b2301d0790347320302cc0"
             },
             "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
@@ -311,15 +334,18 @@ Return the active delegations for the proposer of this slot, if they exist.
 ---
 
 
-### Endpoint: `/constraints/v0/relay/constraints?slot={slot}`
+### Endpoint: `/constraints/v0/relay/constraints/{slot}`
 
-Returns all signed constraints for a given slot, if they exist.
+Returns all signed constraints for a given slot, if they exist. The request requires authorization via the `X-Receiver-Signature` header which is a BLS signature over the requested `slot` number. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`.
 
 - **Method:** `GET`
 - **Response:** `SignedConstraints[]`
 - **Parameters:**
     - `slot`: `string` (regex `[0-9]+`)
 - **Body:** Empty
+- **Headers:**
+    - `Content-Type: application/json`
+    - `X-Receiver-Signature: <BLS signature>`
 
 - **Example Response**
     ```json
@@ -338,6 +364,10 @@ Returns all signed constraints for a given slot, if they exist.
                         "constraintType": "0x01",
                         "payload": "0x367e8208d920f2e9587369b2301de9587369b2301d0790347320302cc0301d0790347320302cc0943d5a1884560367e8208d920f2e958"
                     }
+                ],
+                "receivers": [
+                    "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a",
+                    "0x84e47f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74b"
                 ]
             },
             "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
@@ -351,9 +381,9 @@ Returns all signed constraints for a given slot, if they exist.
 
 ---
 
-### Endpoint: `/constraints/v0/relay/constraints_stream?slot={slot}`
+### Endpoint: `/constraints/v0/relay/constraints_stream/{slot}`
 
-Returns a stream of constraints via Server-Sent Events (SSE).
+Returns a stream of constraints via Server-Sent Events (SSE). The request requires authorization via the `X-Receiver-Signature` header which is a BLS signature over the requested `slot` number. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`.
 
 - **Method:** `GET`
 - **Response:**  Server-sent events containing `SignedConstraints[]` objects
@@ -364,7 +394,7 @@ Returns a stream of constraints via Server-Sent Events (SSE).
     - `Content-Type: text/event-stream`
     - `Cache-Control: no-cache`
     - `Connection: keep-alive`
-
+    - `X-Receiver-Signature: <BLS signature>`
 - **Example Response**
     ```json
     event: json
@@ -383,6 +413,10 @@ Returns a stream of constraints via Server-Sent Events (SSE).
                         "constraintType": "0x01",
                         "payload": "0x367e8208d920f2e9587369b2301de9587369b2301d0790347320302cc0301d0790347320302cc0943d5a1884560367e8208d920f2e958"
                     }
+                ],
+                "receivers": [
+                    "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a",
+                    "0x84e47f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74b"
                 ]
             },
             "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
@@ -498,19 +532,15 @@ autonumber
     participant Builder
     participant Relay
     participant Gateway
-    participant RPC Router
     participant Wallet
     participant User
 
     Proposer->>Relay: POST /delegate
     Builder->>Relay: GET /delegate
-    RPC Router->>Relay: GET /delegate
     User->>Wallet: POST /eth_sendTransaction
-    Wallet->>RPC Router: POST /eth_sendTransaction
-    RPC Router->>Gateway: POST /eth_sendTransaction
+    Wallet->>Gateway: POST /eth_sendTransaction
     Gateway->>Gateway: Process transaction
-    Gateway->>RPC Router: SignedCommitment (preconf)
-    RPC Router->>Wallet: SignedCommitment (preconf)
+    Gateway->>Wallet: SignedCommitment (preconf)
     Wallet->>User: SignedCommitment (preconf)
     Loop for each SignedCommitment
         Gateway->>Gateway: Create Constraint
