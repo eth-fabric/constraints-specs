@@ -127,6 +127,11 @@ Delegations should only be signed at most once per slot as it is a slashable off
 
 Delegations are not cancellable but are only valid for a single slot.
 
+#### How does this relate to slashing?
+`Delegation` messages do not directly commit a proposer to any proposer commitment protocol's slashing conditions. Instead, they are used to instruct the external builder network about which keys have the rights to issue constraints and commitments on behalf of the proposer. 
+
+It is left to the `committer` to opt in to proposer commitment protocols but the spec does not mandate any specific way to do so. Alternatively, the proposer can directly opt in to a protocol's `Slasher` contract via the URC as described in the next section.
+
 ### Opting in to Slasher contract's on-chain (Optional)
 The URC optionally allows an on-chain way for proposers to opt in to a proposer commitment protocol's `Slasher` contract, allowing for valid-until-cancelled commitments.
 
@@ -231,3 +236,35 @@ If a proposer previously opted in to a slasher contract [as described above](#op
 function optOutOfSlasher(bytes32 registrationRoot, address slasher) external
 ```
 
+## Slashing
+There are different ways in which a proposer commitment can be broken.
+
+### Liveness faults
+A liveness fault is when a proposer fails to submit a block during their slot. They are subject to penalties from PoS and potential slashing from the proposer commitment protocols they or their delegated `committer` opted into. 
+
+### Safety faults
+#### Equivocation in PoS
+A safety fault in PoS is when the proposer equivocates when producing a block or attesting to other blocks. They are subject to penalties defined in the [Eth2 specs](https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/validator.md#how-to-avoid-slashing).
+
+#### Safety faults in proposer commitment protocols
+A safety fault is when a proposer submits a block that breaks the commitments they made. They are subject to penalties defined in the `Slasher` contracts they've opted in to.
+
+#### Proposer initiated
+A proposer can trigger a safety fault by submitting a block that breaks the commitments they made.
+
+The trivial case is by proposing a self-built block that ignores all commitments issued by their delegated Gateway.
+
+#### Gateway initiated
+A Gateway can trigger a safety fault by issuing commitments that are not satisfied by the proposer's block.
+
+An example of this is if the Gateway fails to disseminate all of the constraints to the external builder network resulting in a block that does not satisfy the issued commitments.
+
+#### Slashing from invalid URC registrations
+For efficiency, the URC optimistically assumes that all `Registration` messages are valid. Therefore, if a registration is found to be invalid within the `FRAUD_PROOF_WINDOW`, a challenger can slash the proposer by submitting a fraud proof to the URC.
+
+Slashing can be avoided by ensuring that the `Registration.signature` is generated according to the spec [outlined above](#registering-to-the-urc).
+
+#### Slashing from equivocating delegations
+The URC mandates that `Delegation` messages are signed at most once per slot per BLS key. If a proposer is caught signing multiple delegations for the same slot, they can be slashed by submitting the conflicting delegations to the URC.
+
+To avoid slashing, sidecars should ensure that `Delegation` messages are only signed once per slot per BLS key (e.g., following in the footsteps of [EIP-3076](https://eips.ethereum.org/EIPS/eip-3076)).
