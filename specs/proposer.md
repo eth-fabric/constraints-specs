@@ -188,3 +188,46 @@ def process_bid(state: BeaconState, bid: SignedBuilderBid, fee_recipient: Execut
     # Verify bid signature
     verify_bid_signature(state, bid)
 ```
+
+## Proposer Deregistration
+Unlike the Builder spec, proposer commitments require collateral to be posted to the URC so there is a need to define the deregistration process.
+
+### Undelegating from Gateways
+The spec does not support undelegating from Gateways as it introduces race conditions surrounding slashing as well as a way to bypass equivocation slashing. Therefore, once signed, a `Delegation` is final and cannot be invalidated until the `slot` has elapsed.
+
+### Unregistering from the URC
+Unregistering from the URC is a two-step process:
+
+#### Calling `unregister()`
+The `owner` address of the URC can call `unregister()` to initiate the deregistration process, saving the block number that it was called.
+
+```Solidity
+function unregister(bytes32 registrationRoot) external;
+```
+
+#### Calling `claimCollateral()`
+The `owner` address can call `claimCollateral()` to retrieve their collateral after `UNREGISTRATION_DELAY` blocks have elapsed. 
+
+```Solidity
+function claimCollateral(bytes32 registrationRoot) external;
+```
+
+The proposer's collateral is transferred to the `owner` address.
+
+#### Special case: `claimSlashedCollateral()`
+
+If the proposer was slashed, the `owner` address can call `claimSlashedCollateral()` after `SLASH_WINDOW` blocks have elapsed to retrieve their remaining collateral.
+
+```Solidity
+function claimSlashedCollateral(bytes32 registrationRoot) external;
+```
+
+The proposer's remaining collateral is transferred to the `owner` address.
+
+### Opting out of slashing (Optional)
+If a proposer previously opted in to a slasher contract [as described above](#opt-in-to-slasher-contracts-optional), they can opt out by calling `optOutOfSlasher()` after `OPT_IN_DELAY` blocks have elapsed.
+
+```Solidity
+function optOutOfSlasher(bytes32 registrationRoot, address slasher) external
+```
+
