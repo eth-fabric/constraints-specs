@@ -35,6 +35,18 @@ Some nuances:
 - The URC makes it possible for a **Proposer** and **Gateway** to simultaneously be **Committers**.
 - Proposers can be slashed for equivocation if they sign multiple delegations during the same slot, effectively limiting them to a single Gateway at a time.
 
+### Constants
+Note the following constants are subject to change prior to the launch of the URC.
+| Name | Value |
+| --- | --- |
+| DELEGATION_DOMAIN_SEPARATOR | "0x0044656c" |
+| REGISTRATION_DOMAIN_SEPARATOR | "0x00435255" |
+| MIN_COLLATERAL | 0.1 ether |
+| UNREGISTRATION_DELAY | 7200 blocks |
+| FRAUD_PROOF_WINDOW | 7200 blocks |
+| SLASH_WINDOW | 7200 blocks |
+| OPT_IN_DELAY | 7200 blocks |
+
 ## Proposer Registration
 A proposer will follow the standard registration process in the Builder Spec as well as a new on-chain registration with the URC and off-chain delegations to Gateway.
 
@@ -50,8 +62,6 @@ The proposer will register to the URC by submitting `Registration` messages for 
     message = abi.encode(owner_address)
     signature = BLS.sign(message, REGISTRATION_DOMAIN_SEPARATOR, bls_private_key)
     ```
-
-    Note that the `REGISTRATION_DOMAIN_SEPARATOR` is defined in the URC as: `"0x00435255"` which is "URC" in little endian.
 
 3. The `signature` is placed in a `Registration` object with the BLS public key.
 
@@ -103,8 +113,6 @@ It is not required but is assumed that the `delegate` BLS and `committer` ECDSA 
     message = abi.encode(delegation)
     signature = BLS.sign(message, DELEGATION_DOMAIN_SEPARATOR, bls_private_key)
     ```
-
-    Note that the `DELEGATION_DOMAIN_SEPARATOR` is defined in the URC as: `"0x0044656c"` which is "Del" in little endian.
 
     Note RLP encoding is used instead of SSZ for simpler on-chain verification.
 
