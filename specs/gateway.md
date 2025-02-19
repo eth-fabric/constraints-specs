@@ -156,3 +156,30 @@ def process_delegation(state: BeaconState,
     # Verify delegation signature
     assert verify_delegation_signature(signed_delegation)
 ```
+
+## Issuing commitments
+A Gateway controlling the `Delegation.committer` address can issue commitments on behalf of the `Delegation.proposer`. 
+
+### The `commitmentType`
+The `commitmentType` is a uint64 that identifies the type of commitment being made and is inspired by [EIP-2718](https://eips.ethereum.org/EIPS/eip-2718). The commitments spec does not define any commitment types, rather they are expected to be defined by protocols. Some guidelines to consider:
+
+- the `commitmentType` defines how the `payload` is interpreted.
+- the `slasher` address points to a `Slasher` contract capable of interpreting the `payload`.
+- the `commitmentType` defines how a corresponding `Constraint` is constructed.
+
+
+### Receiving commitment requests
+The Gateway will receive commitment requests when users post to the postCommitment` endpoint as defined in the [Commitments API](https://github.com/eth-fabric/commitments-specs).
+
+The validity of a commitment request is dependent on the `commitmentType` so is left out of scope for this document.
+
+### Signing commitments
+The Gateway will sign commitments using the private key corresponding to the `Delegation.committer` execution layer address.
+
+```python
+message = keccak256(abi.encode(commitment))
+signature = ECDSA.sign(message, committer_private_key)
+```
+
+They will include this `signature` in the `SignedCommitment` container when responding to the `postCommitment` request.
+
