@@ -38,6 +38,7 @@ Some nuances:
 | --- | --- |
 | DELEGATION_DOMAIN_SEPARATOR | "0x0044656c" |
 | REGISTRATION_DOMAIN_SEPARATOR | "0x00435255" |
+| DOMAIN_APPLICATION_GATEWAY | TBD |
 | MIN_COLLATERAL | 0.1 ether |
 | FRAUD_PROOF_WINDOW | 7200 blocks |
 | SLASH_WINDOW | 7200 blocks |
@@ -163,7 +164,7 @@ A Gateway controlling the `Delegation.committer` address can issue commitments o
 ### The `commitmentType`
 The `commitmentType` is a uint64 that identifies the type of commitment being made and is inspired by [EIP-2718](https://eips.ethereum.org/EIPS/eip-2718). The commitments spec does not define any commitment types, rather they are expected to be defined by protocols. Some guidelines to consider:
 
-- the `commitmentType` defines how the `payload` is interpreted.
+- the `commitmentType` defines how the `Commitment.payload` is interpreted.
 - the `slasher` address points to a `Slasher` contract capable of interpreting the `payload`.
 - the `commitmentType` defines how a corresponding `Constraint` is constructed.
 
@@ -181,5 +182,34 @@ message = keccak256(abi.encode(commitment))
 signature = ECDSA.sign(message, committer_private_key)
 ```
 
-They will include this `signature` in the `SignedCommitment` container when responding to the `postCommitment` request.
+The Gateway will include the `signature` in the `SignedCommitment` container when responding to the `postCommitment` request.
 
+
+## Issuing constraints
+The Gateway is responsible for issuing constraints to builders.
+
+### The `constraintType`
+The `constraintType` is a uint64 that identifies the type of constraint being made and is inspired by [EIP-2718](https://eips.ethereum.org/EIPS/eip-2718). The constraints spec does not define any constraint types, rather they are expected to be defined by protocols. Some guidelines to consider:
+
+- the `constraintType` defines how the `Constraint.payload` is interpreted.
+- the ordering of `constraints[]` in the `ConstraintsMessage`
+- how to generate proofs of constraint validity
+- how to verify proofs of constraint validity
+
+### ConstraintsMessage
+The Gateway will package one of more `Constraint`s into a `ConstraintsMessage`. Builders are expected to process the `ConstraintsMessage.constraints[]` in the order received. The Gateway will also specify the `ConstraintsMessage.receivers[]` which is a list of public keys that are authorized to access these constraints, enforced by the Relay. If this list is empty, the constraints are publicly accessible to anyone.
+
+### Signing constraints
+The Gateway will sign the `ConstraintsMessage` using the private key corresponding to the `Delegation.delegate` BLS public key.
+
+```python
+    domain = compute_domain(DOMAIN_APPLICATION_GATEWAY, fork_version=None, genesis_validators_root=None)
+    signing_root = compute_signing_root(constraints_message, domain)
+    signature = bls.sign(delegate_bls_private_key, signing_root)
+```
+
+The `signature` is included in the `SignedConstraints` container when responding to the `postConstraints` request.
+
+
+### Disseminating constraints
+The Gateway will disseminate constraints by posting the `SignedConstraints` to the `postConstraints` endpoint in the [Constraints API](https://eth-fabric.github.io/constraints-specs/#/Constraints%20API/postConstraints).
