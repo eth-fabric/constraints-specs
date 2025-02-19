@@ -55,13 +55,10 @@ The proposer will register to the URC by submitting `Registration` messages for 
 
 3. The `signature` is placed in a `Registration` object with the BLS public key.
 
-```Solidity
-    struct Registration {
-        /// BLS public key
-        BLS.G1Point pubkey;
-        /// BLS signature
-        BLS.G2Point signature;
-    }
+```python
+    class Registration(Container):
+        pubkey: BLS.G1Point
+        signature: BLS.G2Point
 ```
 
 #### **Signing and submitting a registration**
@@ -108,6 +105,8 @@ It is not required but is assumed that the `delegate` BLS and `committer` ECDSA 
     ```
 
     Note that the `DELEGATION_DOMAIN_SEPARATOR` is defined in the URC as: `"0x0044656c"` which is "Del" in little endian.
+
+    Note RLP encoding is used instead of SSZ for simpler on-chain verification.
 
 2. The `signature` is placed in a `SignedDelegation` object with the BLS public key.
     ```Python
@@ -260,11 +259,78 @@ A Gateway can trigger a safety fault by issuing commitments that are not satisfi
 An example of this is if the Gateway fails to disseminate all of the constraints to the external builder network resulting in a block that does not satisfy the issued commitments.
 
 #### Slashing from invalid URC registrations
-For efficiency, the URC optimistically assumes that all `Registration` messages are valid. Therefore, if a registration is found to be invalid within the `FRAUD_PROOF_WINDOW`, a challenger can slash the proposer by submitting a fraud proof to the URC.
+For efficiency, the URC optimistically assumes that all `Registration` messages are valid. Therefore, if a registration is found to be invalid within the `FRAUD_PROOF_WINDOW`, a challenger can slash the proposer by submitting a fraud proof to the URC's `slashRegistration()` function.
 
 Slashing can be avoided by ensuring that the `Registration.signature` is generated according to the spec [outlined above](#registering-to-the-urc).
 
 #### Slashing from equivocating delegations
-The URC mandates that `Delegation` messages are signed at most once per slot per BLS key. If a proposer is caught signing multiple delegations for the same slot, they can be slashed by submitting the conflicting delegations to the URC.
+The URC mandates that `Delegation` messages are signed at most once per slot per BLS key. If a proposer is caught signing multiple delegations for the same slot, they can be slashed by submitting the conflicting delegations to the URC's `slashEquivocation()` function.
 
 To avoid slashing, sidecars should ensure that `Delegation` messages are only signed once per slot per BLS key (e.g., following in the footsteps of [EIP-3076](https://eips.ethereum.org/EIPS/eip-3076)).
+
+### Understanding the URC's `slashCommitment()` function
+#### Signing commitments
+The `committer` address delegated to within `Delegation` messages is authorized to sign `Commitment` messages on behalf of the proposer.
+
+```python
+class Commitment(Container):
+    commitmentType: uint64
+    payload: Bytes
+    slasher: Address
+```
+A `signature` is generated with the `committer`'s private key, where the `committer` is a standard execution layer address:
+
+```python
+message = keccak256(abi.encode(commitment))
+signature = ECDSA.sign(message, committer_private_key)
+```
+
+Note RLP encoding is used instead of SSZ for simpler on-chain verification.
+
+The `signature` is placed in a `SignedCommitment` object with the `Commitment`.
+
+```python
+class SignedCommitment(Container):
+    commitment: Commitment
+    signature: Bytes
+```
+
+#### Slashing a broken commitment
+To slash a proposer, anyone can submit the necessary evidence to the URC's `slashCommitment()` function.
+```Solidity
+function slashCommitment(
+    bytes32 registrationRoot,
+    BLS.G2Point calldata registrationSignature,
+    bytes32[] calldata proof,
+    uint256 leafIndex,
+    ISlasher.SignedDelegation calldata delegation,
+    ISlasher.SignedCommitment calldata commitment,
+    bytes calldata evidence
+) external returns (uint256 slashAmountGwei);
+```
+
+The parameters are as follows:
+- `registrationRoot`: the unique identifier for the proposer saved in the URC during the `register()` function
+- `registrationSignature`: the signature that opted the proposer's BLS key into the URC
+- `proof`: a Merkle proof connecting the BLS key to the `registrationRoot`
+- `leafIndex`: the index of the proposer's registration in the Merkle proof
+- `delegation`: the `SignedDelegation` message that was signed by the proposer's BLS key
+- `commitment`: the `SignedCommitment` message that was signed by the `committer` address delegated to within the `Delegation` message
+- `evidence`: arbitrary data that can be used to provide additional information about the slashing to the `Slasher` contract
+
+The function will ensure that the `SignedDelegation` is valid and from a registered proposer. It will then verify that the `SignedCommitment` is valid and from a delegated `committer` address. The function will the call into the committed `Slasher` contract using the standardized `ISlasher.slash()` function:
+
+```Solidity
+function slash(
+    Delegation calldata delegation,
+    Commitment calldata commitment,
+    bytes calldata evidence,
+    address challenger
+) external returns (uint256 slashAmountGwei);
+```
+
+Each `Slasher` contract will define their own slashing logic and opt-in conditions but will all return `slashAmountGwei` which is the amount of Ether collateral to be burned from the proposer's collateral back at the URC. 
+
+
+
+Note, the `slashCommitmentFromOptIn()` functions identically to `slashCommitment()` except it doesn't verify `SignedDelegation` as the `committer` address is already known to the URC from [previous calls](./constraints-api.md#opt-in-to-slasher-contracts-optional) to `optInToSlasher()`.
