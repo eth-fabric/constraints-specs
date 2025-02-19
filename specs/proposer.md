@@ -161,20 +161,20 @@ The following steps largely follow the Builder Spec with step 2 being the only a
 ### Constructing the `BeaconBlockBody`
 #### `ExecutionPayload`
 
-To obtain an execution payload, a block proposer building a block on top of a beacon state in a given slot must take the following actions:
+To obtain an execution payload, a proposer must take the following actions:
 
-1. Call upstream builder software to get an `ExecutionPayloadHeader` with the required data `slot`, `parent_hash`, and `pubkey`, where:
+1. Call the `getHeaderWithProofs` endpoint in the [Constraints API](https://eth-fabric.github.io/constraints-specs/#/Constraints%20API/getHeaderWithProofs) to get an `ExecutionPayloadHeader` with the required data `slot`, `parent_hash`, and `pubkey`, where:
 - `slot` is the proposal's slot
 - `parent_hash` is the value `state.latest_execution_payload_header.block_hash`
 - `pubkey` is the proposer's public key
 
-2. Verify the `proofs` against the `ExecutionPayloadHeader` to ensure that the constraints are satisfied.
+2. Verify the `ConstraintProofs` against the `ExecutionPayloadHeader` to ensure that the constraints are satisfied.
 
 3. Assemble a `BlindedBeaconBlock` according to the process outlined in the Electra specs but with the `ExecutionPayloadHeader` from the prior step in lieu of the full `ExecutionPayload`.
 
-4. The proposer signs the `BlindedBeaconBlock` and assembles a `SignedBlindedBeaconBlock` which is returned to the upstream builder software.
+4. The proposer signs the `BlindedBeaconBlock` and assembles a `SignedBlindedBeaconBlock` which is returned to the upstream builder software by calling the `submitBlindedBlock` endpoint in the [Builder API](https://ethereum.github.io/builder-specs/#/Builder/submitBlindedBlock).
 
-5. The upstream builder software responds with the full `ExecutionPayload`. The proposer can use this payload to assemble a `SignedBeaconBlock` following the rest of the proposal process outlined in the Bellatrix specs.
+5. The upstream builder software responds with the full `ExecutionPayload`. The proposer can use this payload to assemble a `SignedBeaconBlock` following the rest of the proposal process outlined in the Electra specs.
 
 #### Bid processing
 Bids received from step (1) above can be validated with `process_bid` below, where `state` corresponds to the state for the proposal without applying the block (currently under construction) and `fee_recipient` corresponds to the validator's most recently registered fee recipient address:
