@@ -292,7 +292,7 @@ A proposer can delegate constraint submission rights by signing a Delegate messa
                                   $ref: '#/components/schemas/SignedConstraints'
   /constraints/v0/relay/blocks_with_proofs:
     post:
-      operationId: "postBlocksWithProofs"
+      operationId: "submitBlocksWithProofs"
       tags:
         - Constraints API
       summary: "Endpoint for Builder to submit a block with proofs of constraint validity to the Relay"

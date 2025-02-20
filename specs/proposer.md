@@ -37,10 +37,18 @@ Some nuances:
 
 ### Constants
 Note the following constants are subject to change prior to the launch of the URC.
+
+### Domain types
+
 | Name | Value |
-| --- | --- |
-| `DELEGATION_DOMAIN_SEPARATOR` | "0x0044656c" |
-| `REGISTRATION_DOMAIN_SEPARATOR` | "0x00435255" |
+| - | - |
+| `DELEGATION_DOMAIN_SEPARATOR` | `DomainType('0x0044656c')` |
+| `REGISTRATION_DOMAIN_SEPARATOR` | `DomainType('0x00435255')` |
+
+### URC parameters
+
+| Name | Value |
+| - | - |
 | `MIN_COLLATERAL` | 0.1 ether |
 | `UNREGISTRATION_DELAY` | 7200 blocks |
 | `FRAUD_PROOF_WINDOW` | 7200 blocks |

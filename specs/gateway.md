@@ -34,11 +34,18 @@ Some nuances:
 - Proposers can be slashed for equivocation if they sign multiple delegations during the same slot, effectively limiting them to a single Gateway at a time.
 
 ## Constants
+### Domain types
+
 | Name | Value |
-| --- | --- |
-| `DELEGATION_DOMAIN_SEPARATOR` | "0x0044656c" |
-| `REGISTRATION_DOMAIN_SEPARATOR` | "0x00435255" |
+| - | - |
+| `DOMAIN_APPLICATION_BUILDER` | `DomainType('0x00000001')` |
 | `DOMAIN_APPLICATION_GATEWAY` | TBD |
+| `DELEGATION_DOMAIN_SEPARATOR` | `DomainType('0x0044656c')` |
+
+### URC parameters
+
+| Name | Value |
+| - | - |
 | `MIN_COLLATERAL` | 0.1 ether |
 | `FRAUD_PROOF_WINDOW` | 7200 blocks |
 | `SLASH_WINDOW` | 7200 blocks |
