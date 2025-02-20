@@ -39,13 +39,13 @@ Some nuances:
 Note the following constants are subject to change prior to the launch of the URC.
 | Name | Value |
 | --- | --- |
-| DELEGATION_DOMAIN_SEPARATOR | "0x0044656c" |
-| REGISTRATION_DOMAIN_SEPARATOR | "0x00435255" |
-| MIN_COLLATERAL | 0.1 ether |
-| UNREGISTRATION_DELAY | 7200 blocks |
-| FRAUD_PROOF_WINDOW | 7200 blocks |
-| SLASH_WINDOW | 7200 blocks |
-| OPT_IN_DELAY | 7200 blocks |
+| `DELEGATION_DOMAIN_SEPARATOR` | "0x0044656c" |
+| `REGISTRATION_DOMAIN_SEPARATOR` | "0x00435255" |
+| `MIN_COLLATERAL` | 0.1 ether |
+| `UNREGISTRATION_DELAY` | 7200 blocks |
+| `FRAUD_PROOF_WINDOW` | 7200 blocks |
+| `SLASH_WINDOW` | 7200 blocks |
+| `OPT_IN_DELAY` | 7200 blocks |
 
 ## Proposer Registration
 A proposer will follow the standard registration process in the Builder Spec as well as a new on-chain registration with the URC and off-chain delegations to Gateway.
