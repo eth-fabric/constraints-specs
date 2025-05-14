@@ -47,10 +47,10 @@ Since the proposer commitment space is still nascent, our goal is to design a ge
 | `constraints`   | `POST` | [/constraints/v0/builder/delegate](./constraints-api.md#endpoint-constraintsv0builderdelegate)           | Endpoint for Proposer to delegate constraint submission rights to a Gateway. |
 | `constraints`   | `GET` | [/constraints/v0/builder/header_with_proofs](./constraints-api.md#endpoint-constraintsv0builderheader_with_proofsslotparent_hashpubkey)  | Endpoint for Proposer to request a builder bid with proof of constraint validity. |
 | `constraints`   | `GET` | [/constraints/v0/builder/capabilities](./constraints-api.md#endpoint-constraintsv0buildercapabilities)         | Endpoint to retrieve the constraint capabilities of the Relay. |
-| `constraints`   | `GET` | [/constraints/v0/relay/delegations](./constraints-api.md#endpoint-constraintsv0relaydelegationsslotslot)         | Endpoint to retrieve the signed delegations for the proposer of a given slot, if it exists. |
-| `constraints`   | `GET` | [/constraints/v0/relay/constraints](./constraints-api.md#endpoint-constraintsv0relayconstraintsslotslot)         | Endpoint to retrieve the signed constraints for a given slot. |
-| `constraints`   | `GET` | [/constraints/v0/relay/constraints_stream](./constraints-api.md#endpoint-constraintsv0relayconstraints_streamslotslot)  | Endpoint to retrieve an SSE stream of signed constraints. |
-| `constraints`   | `POST` | [/constraints/v0/relay/blocks_with_proofs](./constraints-api.md#endpoint-constraintsv0relayblocks_with_proofscancellationscancellations) | Endpoint for Builder to submit a block with proofs of constraint validity to the Relay. |
+| `constraints`   | `GET` | [/constraints/v0/relay/delegations](./constraints-api.md#endpoint-constraintsv0relaydelegationsslot)         | Endpoint to retrieve the signed delegations for the proposer of a given slot, if it exists. |
+| `constraints`   | `GET` | [/constraints/v0/relay/constraints](./constraints-api.md#endpoint-constraintsv0relayconstraintsslot)         | Endpoint to retrieve the signed constraints for a given slot. |
+| `constraints`   | `GET` | [/constraints/v0/relay/constraints_stream](./constraints-api.md#endpoint-constraintsv0relayconstraints_streamslot)  | Endpoint to retrieve an SSE stream of signed constraints. |
+| `constraints`   | `POST` | [/constraints/v0/relay/blocks_with_proofs](./constraints-api.md#endpoint-constraintsv0relayblocks_with_proofscancellations) | Endpoint for Builder to submit a block with proofs of constraint validity to the Relay. |
 
 ---
 ![image.png](../img/constraints-api-diagram.png)
@@ -430,7 +430,7 @@ Returns a stream of constraints via Server-Sent Events (SSE). The request requir
     The Relay should only return signed constraints that were signed by the proposer or a gateway that was delegated to by the proposer.
 ---
 
-### Endpoint: `/constraints/v0/relay/blocks_with_proofs?cancellations={cancellations}`
+### Endpoint: `/constraints/v0/relay/blocks_with_proofs/{cancellations}`
 
 Endpoint for submitting blocks with proofs of constraint validity to a Relay.
 
