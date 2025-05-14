@@ -149,9 +149,9 @@ The proposer assembles a `Delegation` object for their BLS key with the [followi
 ```python
 class Delegation(Container):
     # The proposer's BLS public key
-    proposer: BLSPubkey
+    proposer: BLS.G1Point
     # The delegate's BLS public key for Constraints API
-    delegate: BLSPubkey
+    delegate: BLS.G1Point
     # The address of the delegate's ECDSA key for signing commitments
     committer: Address
     # The L1 slot number the delegation is valid for
@@ -176,7 +176,7 @@ It is not required but is assumed that the `delegate` and `committer` private ke
     ```Python
     class SignedDelegation(Container):
         message: Delegation
-        signature: BLSSignature
+        signature: BLS.G2Point
     ```
 
 #### **Delegation dissemination**

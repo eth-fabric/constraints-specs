@@ -1,20 +1,50 @@
 # Gateway Specification
 
 ## Table of Contents
-todo - add when doc is finalized
 
-# Introduction
+- [Introduction](#introduction)
+- [Background](#background)
+  - [Definitions](#definitions)
+  - [Constants](#constants)
+    - [Domain Types](#domain-types)
+    - [URC Parameters](#urc-parameters)
+  - [Containers](#containers)
+    - [Delegation](#delegation)
+    - [SignedDelegation](#signeddelegation)
+    - [Constraint](#constraint)
+    - [SignedConstraint](#signedconstraints)
+    - [Commitment](#commitment)
+    - [SignedCommitment](#signedcommitment)
+- [Receiving Delegations](#receiving-delegations)
+    - [Receiving delegations](#receiving-delegations-1)
+    - [Delegation processing](#delegation-processing)
+        - [is_eligible_for_delegation](#is_eligible_for_delegation)
+        - [verify_delegation_signature](#verify_delegation_signature)
+        - [process_delegation](#process_delegation)
+- [Issuing commitments](#issuing-commitments)
+    - [The commitmentType](#the-commitmenttype)
+    - [Receiving commitment requests](#receiving-commitment-requests)
+    - [Signing commitments](#signing-commitments)
+- [Issuing constraints](#issuing-constraints)
+    - [The constraintType](#the-constrainttype)
+    - [ConstraintsMessage](#constraintsmessage-1)
+    - [Signing constraints](#signing-constraints)
+    - [Disseminating constraints](#disseminating-constraints)
+
+## Introduction
 
 This document explains the way in which a Gateway is expected to use the [Constraints Spec](https://eth-fabric.github.io/constraints-specs/) in conjunction with the existing [Builder Spec](https://ethereum.github.io/builder-specs/#/Builder) as well as the [Commitments Spec](https://github.com/eth-fabric/commitments-specs) and [Universal Registry Contract](https://github.com/eth-fabric/urc) (URC) to facilitate proposer commitments. The language and format of this document is meant to mirror the original [Builder Specs](https://github.com/ethereum/builder-specs/blob/main/specs/bellatrix/builder.md).
 
 At a high-level, a Gateway will issue `Commitment` messages that adhere to the [Commitments Spec](https://github.com/eth-fabric/commitments-specs) to commit to actions on behalf of a proposer. They will also create `Constraint` messages and disseminate them via the [Constraints API](https://eth-fabric.github.io/constraints-specs/) to instruct Builders how to construct a valid L1 block that satisfies every `Commitment`. 
 
-# Background
-## Definitions
+## Background
+### Definitions
 
 | Name | Definition |
 | --- | --- |
 | **Proposer**   | An Ethereum validator with the rights to propose an L1 block. |
+| **Builder**    | An entity specialized in building L1 blocks. |
+| **Relay**      | A trusted entity that aggregates blocks from Builders for Proposers. |
 | **Commitment** | A binding message committing the proposer to perform an action as part of their block proposal duties. |
 | **Constraint** | Instructions for block builders to build blocks that adhere to proposer commitments. |
 | **Gateway**    | Third party with Constraint and Commitment submission authority granted by the Proposer. |
@@ -24,17 +54,15 @@ At a high-level, a Gateway will issue `Commitment` messages that adhere to the [
 
 A note on definitions:
 
-- Teams commonly refer to **Proposers** as being **Preconfers** and **Gateways** as being **Delegated Preconfers.** 
-- Since the spec generalizes to cover *all proposer commitments*, we’ll use the terms **Committer** and **Delegated Committer** respectively so as to not limit imaginations.
+- Teams commonly refer to **Proposers** as being **Preconfers** and **Gateways** as being **Delegated Preconfers**. Since the spec generalizes to cover *all proposer commitments*, we’ll stick to the term **Gateway** so as to not limit imaginations to just preconfs.
 
 Some nuances:
 
-- Proposers can self-delegate, in which case they are considered a **Committer**, otherwise they can delegate to a **Gateway**.
-- The URC makes it possible for a **Proposer** and **Gateway** to simultaneously be **Committers**.
+- Proposers can self-delegate, in which case they act as their own **Gateway**.
 - Proposers can be slashed for equivocation if they sign multiple delegations during the same slot, effectively limiting them to a single Gateway at a time.
 
-## Constants
-### Domain types
+### Constants
+#### Domain types
 
 | Name | Value |
 | - | - |
@@ -42,40 +70,40 @@ Some nuances:
 | `DOMAIN_APPLICATION_GATEWAY` | TBD |
 | `DELEGATION_DOMAIN_SEPARATOR` | `DomainType('0x0044656c')` |
 
-### URC parameters
+#### URC parameters
 
 | Name | Value |
 | - | - |
 | `MIN_COLLATERAL` | 0.1 ether |
-| `FRAUD_PROOF_WINDOW` | 7200 blocks |
-| `SLASH_WINDOW` | 7200 blocks |
+| `FRAUD_PROOF_WINDOW` | 86400 seconds |
+| `SLASH_WINDOW` | 86400 seconds |
 
 
-## Containers
-### Delegation
+### Containers
+#### Delegation
 ```python
 class Delegation(Container):
-    proposer: BLSPubkey
-    delegate: BLSPubkey
+    proposer: BLS.G1Point
+    delegate: BLS.G1Point
     committer: Address
     slot: Slot
     metadata: Bytes
 ```
-### SignedDelegation
+#### SignedDelegation
 ```python
 class SignedDelegation(Container):
     message: Delegation
-    signature: BLSSignature
+    signature: BLS.G2Point
 ```
 
-### Constraint
+#### Constraint
 ```python
 class Constraint(Container):
     constraintType: uint64
     payload: Bytes
 ```
 
-### ConstraintsMessage
+#### ConstraintsMessage
 ```python
 class ConstraintsMessage(Container):
     proposer: BLSPubkey
@@ -85,14 +113,14 @@ class ConstraintsMessage(Container):
     receivers: List[BLSPubkey]
 ```
 
-### SignedConstraints
+#### SignedConstraints
 ```python
 class SignedConstraints(Container):
     message: ConstraintsMessage
-    signature: BLSSignature
+    signature: BLS.G2Point
 ```
 
-### Commitment
+#### Commitment
 ```python
 class Commitment(Container):
     commitmentType: uint64
@@ -100,14 +128,14 @@ class Commitment(Container):
     slasher: Address
 ```
 
-### SignedCommitment
+#### SignedCommitment
 ```python
 class SignedCommitment(Container):
     commitment: Commitment
     signature: Bytes
 ```
 
-# Receiving delegations
+## Receiving delegations
 Proposers will sign and disseminate `Delegation` messages as described in the [Proposer Spec](./proposer.md#delegating-to-gateways).
 
 ### **Receiving delegations**
@@ -120,7 +148,7 @@ To assist in registration processing, we use the following functions from the [c
 - [is_active_validator](https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#is_active_validator)
 - [is_slashable_validator](https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#is_slashable_attestation_data)
 
-#### is_eligible_for_delegation
+##### is_eligible_for_delegation
 ```python
 def is_eligible_for_delegation(state: BeaconState, validator: Validator) -> bool:
     """
@@ -177,7 +205,7 @@ The `commitmentType` is a uint64 that identifies the type of commitment being ma
 
 
 ### Receiving commitment requests
-The Gateway will receive commitment requests when users post to the postCommitment` endpoint as defined in the [Commitments API](https://github.com/eth-fabric/commitments-specs).
+The Gateway will receive commitment requests when users post to the `postCommitmentRequest` endpoint as defined in the [Commitments API](https://github.com/eth-fabric/commitments-specs).
 
 The validity of a commitment request is dependent on the `commitmentType` so is left out of scope for this document.
 
@@ -188,12 +216,13 @@ The Gateway will sign commitments using the private key corresponding to the `De
 message = keccak256(abi.encode(commitment))
 signature = ECDSA.sign(message, committer_private_key)
 ```
+Note RLP encoding is used instead of SSZ for simpler on-chain verification.
 
-The Gateway will include the `signature` in the `SignedCommitment` container when responding to the `postCommitment` request.
+The Gateway will include the `signature` in the `SignedCommitment` container when responding to the `postCommitmentRequest` request.
 
 
 ## Issuing constraints
-The Gateway is responsible for issuing constraints to builders.
+The Gateway is responsible for issuing constraints to builders to instruct them how to build L1 blocks that comply to the commitments the Gateway has made.
 
 ### The `constraintType`
 The `constraintType` is a uint64 that identifies the type of constraint being made and is inspired by [EIP-2718](https://eips.ethereum.org/EIPS/eip-2718). The constraints spec does not define any constraint types, rather they are expected to be defined by protocols. Some guidelines to consider:
@@ -204,7 +233,7 @@ The `constraintType` is a uint64 that identifies the type of constraint being ma
 - how to verify proofs of constraint validity
 
 ### ConstraintsMessage
-The Gateway will package one of more `Constraint`s into a `ConstraintsMessage`. Builders are expected to process the `ConstraintsMessage.constraints[]` in the order received. The Gateway will also specify the `ConstraintsMessage.receivers[]` which is a list of public keys that are authorized to access these constraints, enforced by the Relay. If this list is empty, the constraints are publicly accessible to anyone.
+The Gateway will package one or more `Constraint` objects into a `ConstraintsMessage`. Builders are expected to process the `ConstraintsMessage.constraints[]` in the order received. The Gateway will also specify the `ConstraintsMessage.receivers[]` which is a list of public keys that are authorized to access these constraints, enforced by the Relay. If this list is empty, the constraints are publicly accessible to anyone.
 
 ### Signing constraints
 The Gateway will sign the `ConstraintsMessage` using the private key corresponding to the `Delegation.delegate` BLS public key.
