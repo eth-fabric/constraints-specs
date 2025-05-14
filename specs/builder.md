@@ -1,18 +1,40 @@
 # Builder Specification
 
 ## Table of Contents
-todo - add when doc is finalized
+- [Background](#background)
+  - [Definitions](#definitions)
+  - [Constants](#constants)
+    - [Domain types](#domain-types)
+    - [Time parameters](#time-parameters)
+  - [Containers](#containers)
+    - [Constraint](#constraint)
+    - [ConstraintsMessage](#constraintsmessage)
+    - [SignedConstraints](#signedconstraints)
+    - [VersionSubmitBlockRequestWithProofs](#versionedsubmitblockrequestwithproofs)
+    - [ConstraintProofs](#constraintproofs)
+    - [BuilderBid](#builderbid)
+    - [SignedBuilderBidWithProofs](#signedbuilderbidwithproofs)
+- [Signing](#signing)
+- [Validator Registration Processing](#validator-registration-processing)
+- [Constraint Processing](#constraint-processing)
+    - [verify_builder_slot_signature](#verify_builder_slot_signature)
+    - [verify_constraint_signature](#verify_constraint_signature)
+    - [process_constraints](#process_constraints)
+- [Building](#building)
+    - [Bidding](#bidding)
+        - [Constructing the BuilderBidWithProofs](#constructing-the-builderbidwithproofs)
+    - [Submitting a block](#submitting-a-block)
 
-# Background
-## Definitions
+## Background
+### Definitions
 
 | Name | Definition |
 | --- | --- |
 | **Proposer**   | An Ethereum validator with the rights to propose an L1 block. |
-| **Commitment** | A binding message committing the proposer to perform an action as part of their block proposal duties. |
-| **Constraint** | Instructions for block builders to build blocks that adhere to proposer commitments. |
 | **Builder**    | An entity specialized in building L1 blocks. |
 | **Relay**      | A trusted entity that aggregates blocks from Builders for Proposers. |
+| **Commitment** | A binding message committing the proposer to perform an action as part of their block proposal duties. |
+| **Constraint** | Instructions for block builders to build blocks that adhere to proposer commitments. |
 | **Gateway**    | Third party with Constraint and Commitment submission authority granted by the Proposer. |
 | **Committer**  | An entity that makes commitment. |
 | **Preconfer**  | A Committer dealing preconfirmations. |
@@ -20,18 +42,16 @@ todo - add when doc is finalized
 
 A note on definitions:
 
-- Teams commonly refer to **Proposers** as being **Preconfers** and **Gateways** as being **Delegated Preconfers.** 
-- Since the spec generalizes to cover *all proposer commitments*, we’ll use the terms **Committer** and **Delegated Committer** respectively so as to not limit imaginations.
+- Teams commonly refer to **Proposers** as being **Preconfers** and **Gateways** as being **Delegated Preconfers**. Since the spec generalizes to cover *all proposer commitments*, we’ll stick to the term **Gateway** so as to not limit imaginations to just preconfs.
 
 Some nuances:
 
-- Proposers can self-delegate, in which case they are considered a **Committer**, otherwise they can delegate to a **Gateway**.
-- The URC makes it possible for a **Proposer** and **Gateway** to simultaneously be **Committers**.
+- Proposers can self-delegate, in which case they act as their own **Gateway**.
 - Proposers can be slashed for equivocation if they sign multiple delegations during the same slot, effectively limiting them to a single Gateway at a time.
 
-## Constants
+### Constants
 
-### Domain types
+#### Domain types
 
 | Name | Value |
 | - | - |
@@ -39,13 +59,13 @@ Some nuances:
 | `DOMAIN_APPLICATION_GATEWAY` | TBD |
 | `DELEGATION_DOMAIN_SEPARATOR` | `DomainType('0x0044656c')` |
 
-### Time parameters
+#### Time parameters
 
 | Name | Value | Unit | Duration |
 | - | - | - | - |
 | `MAX_CONSTRAINTS_PER_SLOT` | `uint64(256)` | count | 256 constraints |
 
-## Containers
+### Containers
 
 Consider the following definitions supplementary to the definitions in `consensus-specs`. For information on how containers are signed, see [Signing](#signing).
 
@@ -105,7 +125,7 @@ class SignedBuilderBidWithProofs(Container):
     proofs: ConstraintProofs
 ```
 
-### Signing
+## Signing
 
 All signature operations should follow the [standard BLS operations](https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#bls-signatures) interface defined in `consensus-specs`.
 
