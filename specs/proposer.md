@@ -132,9 +132,9 @@ It is not required but is assumed that the `delegate` BLS and `committer` ECDSA 
     ```
 
 #### **Delegation dissemination**
-Proposers are expected to send their `SignedDelegation` messages to the external builder network using the `POST /delegate` endpoint in the [Constraints API](./constraints-api.md#delegation).
+Proposers are expected to send their `SignedDelegation` messages to Relays using the `POST /delegate` endpoint in the [Constraints API](./constraints-api.md#delegation).
 
-Delegations are expected to be disseminated across the external builder network via Relays.
+Delegations are expected to be disseminated via Relays.
 
 Proposers should submit valid Delegations ahead of any their block proposal duties to ensure Gateways have time to submit constraints and commitments on their behalf.
 

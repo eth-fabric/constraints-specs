@@ -11,6 +11,8 @@ todo - add when doc is finalized
 | **Proposer**   | An Ethereum validator with the rights to propose an L1 block. |
 | **Commitment** | A binding message committing the proposer to perform an action as part of their block proposal duties. |
 | **Constraint** | Instructions for block builders to build blocks that adhere to proposer commitments. |
+| **Builder**    | An entity specialized in building L1 blocks. |
+| **Relay**      | A trusted entity that aggregates blocks from Builders for Proposers. |
 | **Gateway**    | Third party with Constraint and Commitment submission authority granted by the Proposer. |
 | **Committer**  | An entity that makes commitment. |
 | **Preconfer**  | A Committer dealing preconfirmations. |
@@ -116,10 +118,10 @@ There are three types of data to sign over in the Builder API:
 * Gateway API messages, e.g. constraints, which should compute the signing root using `compute_signing_root` with domain given by `compute_domain(DOMAIN_APPLICATION_GATEWAY)`.
 
 ## Validator registration processing
-The spec is unchanged from the [Builder Spec](https://github.com/ethereum/builder-specs/blob/main/specs/bellatrix/builder.md#validator-registration-processing).
+The regstration spec is unchanged from the [Builder Spec](https://github.com/ethereum/builder-specs/blob/main/specs/bellatrix/builder.md#validator-registration-processing), specifically validators will still sign `ValidatorRegistration` messages to register to begin working with Relays and Builders.
 
 ## Constraint Processing
-A Builder can retrieve constraints from the upstream builder network by calling the `getConstraints` [endpoint](https://eth-fabric.github.io/constraints-specs/#/Constraints%20API/getConstraints) or `getConstraintsStream` [endpoint](https://eth-fabric.github.io/constraints-specs/#/Constraints%20API/getConstraintsStream).
+A Builder can retrieve constraints from Relays by calling the `getConstraints` [endpoint](https://eth-fabric.github.io/constraints-specs/#/Constraints%20API/getConstraints) or `getConstraintsStream` [endpoint](https://eth-fabric.github.io/constraints-specs/#/Constraints%20API/getConstraintsStream).
 
 For authorization, the Builder will sign the current `slot` number with their BLS private key as follows: 
 ```python

@@ -111,7 +111,7 @@ class SignedCommitment(Container):
 Proposers will sign and disseminate `Delegation` messages as described in the [Proposer Spec](./proposer.md#delegating-to-gateways).
 
 ### **Receiving delegations**
-Gateways can check all delegations for a given slot by querying the `getDelegations` endpoint in the [Constraints API](./constraints-api.md#endpoint-constraintsv0relaydelegationsslot).
+Gateways can check all delegations for a given slot by querying the `getDelegations` endpoint in the [Constraints API](./constraints-api.md#endpoint-constraintsv0relaydelegationsslot), served by Relays.
 
 ### **Delegation processing**
 To assist in registration processing, we use the following functions from the [consensus specs](https://github.com/ethereum/consensus-specs):
