@@ -117,7 +117,7 @@ class ConstraintsMessage(Container):
 ```python
 class SignedConstraints(Container):
     message: ConstraintsMessage
-    signature: BLS.G2Point
+    signature: BLSSignature
 ```
 
 #### Commitment

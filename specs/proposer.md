@@ -232,7 +232,7 @@ To obtain an execution payload, a proposer must take the following actions:
 #### Bid processing
 Bids received from step (1) above can be validated with `process_bid` below, where `state` corresponds to the state for the proposal without applying the block (currently under construction) and `fee_recipient` corresponds to the validator's most recently registered fee recipient address:
 ```Python
-def verify_bid_signature(state: BeaconState, signed_bid: SignedBuilderBid) -> bool:
+def verify_bid_signature(state: BeaconState, signed_bid: SignedBuilderBidWithProofs) -> bool:
     pubkey = signed_bid.message.pubkey
     domain = compute_domain(DOMAIN_APPLICATION_BUILDER)
     signing_root = compute_signing_root(signed_registration.message, domain)
@@ -241,7 +241,7 @@ def verify_bid_signature(state: BeaconState, signed_bid: SignedBuilderBid) -> bo
 A bid is considered valid if the following function completes without raising any assertions:
 
 ```Python
-def process_bid(state: BeaconState, bid: SignedBuilderBid, fee_recipient: ExecutionAddress):
+def process_bid(state: BeaconState, bid: SignedBuilderBidWithProofs, fee_recipient: ExecutionAddress):
     # Verify execution payload header
     header = bid.message.header
     assert header.parent_hash == state.latest_execution_payload_header.block_hash
