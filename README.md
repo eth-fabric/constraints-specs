@@ -23,4 +23,4 @@ python3 -m http.server 8080
 The spec will render at http://localhost:8080.
 
 ### Disclaimer
-This project is not audited and is not ready for production use. Please see Terms of Use (https://github.com/Commit-Boost/commit-boost-client/blob/main/TERMS-OF-USE.md) for more details.
+This project is not audited and is not ready for production use. Please see [Terms of Use](https://github.com/Commit-Boost/commit-boost-client/blob/main/TERMS-OF-USE.md) for more details.
