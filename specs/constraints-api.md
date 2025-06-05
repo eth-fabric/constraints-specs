@@ -45,14 +45,11 @@ Since the proposer commitment space is still nascent, our goal is to design a ge
 | --- | --- | --- | --- |
 | `constraints`   | `POST` | [/constraints/v0/builder/constraints](./constraints-api.md#endpoint-constraintsv0builderconstraints)        | Endpoint for Proposer or Gateway to submit a batch of signed constraints to the Relay. |
 | `constraints`   | `POST` | [/constraints/v0/builder/delegate](./constraints-api.md#endpoint-constraintsv0builderdelegate)           | Endpoint for Proposer to delegate constraint submission rights to a Gateway. |
-| `constraints`   | `GET` | [/constraints/v0/builder/header_with_attestation](./constraints-api.md#endpoint-constraintsv0builderheader_with_attestationslotparent_hashpubkey)  | Endpoint for Proposer to request a builder bid with a Gateway attestation of constraint validity. |
 | `constraints`   | `GET` | [/constraints/v0/builder/capabilities](./constraints-api.md#endpoint-constraintsv0buildercapabilities)         | Endpoint to retrieve the constraint capabilities of the Relay. |
 | `constraints`   | `GET` | [/constraints/v0/relay/delegations](./constraints-api.md#endpoint-constraintsv0relaydelegationsslot)         | Endpoint to retrieve the signed delegations for the proposer of a given slot, if it exists. |
 | `constraints`   | `GET` | [/constraints/v0/relay/constraints](./constraints-api.md#endpoint-constraintsv0relayconstraintsslot)         | Endpoint to retrieve the signed constraints for a given slot. |
 | `constraints`   | `GET` | [/constraints/v0/relay/constraints_stream](./constraints-api.md#endpoint-constraintsv0relayconstraints_streamslot)  | Endpoint to retrieve an SSE stream of signed constraints. |
 | `constraints`   | `POST` | [/constraints/v0/relay/blocks_with_proofs](./constraints-api.md#endpoint-constraintsv0relayblocks_with_proofscancellations) | Endpoint for Builder to submit a block with proofs of constraint validity to the Relay. |
-| `constraints`   | `GET` | [/constraints/v0/relay/header_with_proofs](./constraints-api.md#endpoint-constraintsv0relayheader_with_proofsslotparent_hashpubkey)  | Endpoint to request a block header with proof of constraint validity. |
-| `constraints`   | `GET` | [/constraints/v0/relay/attestation](./constraints-api.md#endpoint-constraintsv0relayattestationslotparent_hashpubkey)  | Endpoint to post an attestation that a block's constraints are followed. |
 
 ---
 ![image.png](../img/constraints-api-diagram.png)
@@ -167,67 +164,6 @@ Endpoint for a Proposer to delegate constraint submission rights to a Gateway. T
     - `metadata`: Additional opaque byte array reserved for Gateways to interpret.
 
     While the Constraints API aims to be unopinionated about how slasher contracts are implemented, it's assumed that `SignedDelegation` messages are part of the evidence used to slash a proposer.
----
-
-### Endpoint: `/constraints/v0/builder/header_with_attestation/{slot}/{parent_hash}/{pubkey}`
-
-Endpoint for requesting a Gateway-attested builder bid from a Relay.
-
-- **Method:** `GET`
-- **Response:** `VersionedSignedBuilderBidWithAttestation`
-- **Parameters:**
-    - `slot`: `string` (regex `[0-9]+`)
-    - `parent_hash`: `string` (regex `0x[a-fA-F0-9]+`)
-    - `pubkey`: `string` (regex `0x[a-fA-F0-9]+`)
-- **Body:** Empty
-
-- **Schema**
-    ```python
-    class VersionedSignedBuilderBidWithAttestation:
-        ... # All regular fields from VersionedSignedBuilderBid, additionally
-        attestation: BLSSignature
-    ```
-
-- **Description**
-
-    The `VersionedSignedBuilderBidWithAttestation` schema extends `VersionedSignedBuilderBid` from the [original builder specs](https://ethereum.github.io/builder-specs/#/Builder/getHeader) to include a Gateway signature attesting to constraint validity. Without leaking the block's contents, a Proposer can verify that the block satisfies the constraints by checking the Gateway signature against the block header.
-
-- **Example Response**
-    ```json
-    {
-        "version": "deneb",
-        "data": {
-            "message": {
-                "header": {
-                    "parent_hash": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "fee_recipient": "0xabcf8e0d4e9587369b2301d0790347320302cc09",
-                    "state_root": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "receipts_root": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "logs_bloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-                    "prev_randao": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "block_number": "1",
-                    "gas_limit": "1",
-                    "gas_used": "1",
-                    "timestamp": "1",
-                    "extra_data": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "base_fee_per_gas": "1",
-                    "blob_gas_used": "1",
-                    "excess_blob_gas": "1",
-                    "block_hash": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "transactions_root": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "withdrawals_root": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"
-                },
-                "blob_kzg_commitments": [
-                    "0xa94170080872584e54a1cf092d845703b13907f2e6b3b1c0ad573b910530499e3bcd48c6378846b80d2bfa58c81cf3d5"
-                ],
-                "value": "1",
-                "pubkey": "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a"
-            },
-            "attestation": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505",
-            "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
-        }
-    }
-    ```
 ---
 
 ### Endpoint: `/constraints/v0/builder/capabilities`
@@ -481,42 +417,6 @@ Endpoint for submitting blocks with proofs of constraint validity to a Relay.
     "blobs_bundle": { "commitments": [], "proofs": [], "blobs": [] }
     }
     ```
----
-### Endpoint: `/constraints/v0/relay/header_with_proofs/{slot}/{parent_hash}/{pubkey}`
-
-Endpoint for requesting an execution payload header and constraint proofs from a Relay.
-
-- **Method:** `GET`
-- **Response:** `VersionedSignedBuilderBidWithProofs`
-- **Parameters:**
-    - `slot`: `string` (regex `[0-9]+`)
-    - `parent_hash`: `string` (regex `0x[a-fA-F0-9]+`)
-    - `pubkey`: `string` (regex `0x[a-fA-F0-9]+`)
-- **Body:** Empty
-
-- **Schema**
-    ```python
-    class VersionedSignedBuilderBidWithProofs:
-        ... # All regular fields from VersionedSignedBuilderBid, additionally
-        proofs: ConstraintProofs
-
-    class ConstraintProofs(Container):
-        constraintTypes: List[uint64, MAX_CONSTRAINTS_PER_SLOT]
-        payloads: List[Bytes, MAX_CONSTRAINTS_PER_SLOT]
-    ```
-
-- **Description**
-
-    The `VersionedSignedBuilderBidWithProofs` schema extends `VersionedSignedBuilderBid` from the [original builder specs](https://ethereum.github.io/builder-specs/#/Builder/getHeader) to include proofs of constraint validity. Without leaking the block's contents, a Gateway can verify that the block satisfies the constraints by checking the `proofs` against the block header. To support a wide range of constraint types with different proving requirements, `ConstraintProofs` is left open-ended to allow for future flexibility.
-
-    - `constraintTypes`: list of unsigned 64-bit numbers between `0` and `0xffffffffffffffff` that represents the type of the proposer commitment (not required to be homogeneous)
-    - `payloads`: list of opaque byte arrays whose interpretation is dependent on the `constraintTypes`
-
-- **Requirements**:
-    - each `constraintType` has a spec that defines how builders can generate `proofs` for their block
-    - each `constraintType` has a spec that defines how relays and proposers can verify `proofs`
-    - When serializing, the `proofs` field must be present in `data`, at the same level of `signature` and `message`. See the example below.
-    - The length of `constraintTypes` and `payloads` must be the same
 
 - **Example `ConstraintProofs`**
     ```python
@@ -545,80 +445,6 @@ Endpoint for requesting an execution payload header and constraint proofs from a
     )
     ```
 
-- **Example Response**
-    ```json
-    {
-        "version": "deneb",
-        "data": {
-            "message": {
-                "header": {
-                    "parent_hash": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "fee_recipient": "0xabcf8e0d4e9587369b2301d0790347320302cc09",
-                    "state_root": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "receipts_root": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "logs_bloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-                    "prev_randao": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "block_number": "1",
-                    "gas_limit": "1",
-                    "gas_used": "1",
-                    "timestamp": "1",
-                    "extra_data": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "base_fee_per_gas": "1",
-                    "blob_gas_used": "1",
-                    "excess_blob_gas": "1",
-                    "block_hash": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "transactions_root": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-                    "withdrawals_root": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"
-                },
-                "blob_kzg_commitments": [
-                    "0xa94170080872584e54a1cf092d845703b13907f2e6b3b1c0ad573b910530499e3bcd48c6378846b80d2bfa58c81cf3d5"
-                ],
-                "value": "1",
-                "pubkey": "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a"
-            },
-            "proofs": {
-                "constraintTypes": [0x00, 0x00],
-                "payloads": ["0x5097...", "0x932587..."]
-            },
-            "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
-        }
-    }
-    ```
----
-### Endpoint: `/constraints/v0/relay/attestation/{slot}/{parent_hash}/{pubkey}`
-
-Endpoint for submitting a Gateway signature that attests to a block that satisfies their previously submitted `SignedConstraints`.
-
-- **Method:** `POST`
-- **Parameters:**
-    - `slot`: `string` (regex `[0-9]+`)
-    - `parent_hash`: `string` (regex `0x[a-fA-F0-9]+`)
-    - `pubkey`: `string` (regex `0x[a-fA-F0-9]+`)
-- **Headers:**
-    - `Content-Type: application/json`
-- **Body:** JSON object of type `GatewayAttestation`
-- **Response:** Empty
-
-- **Schema**
-    ```python
-    class GatewayAttestation(Container):
-        blockhash: Bytes32
-        signature: BLSSignature
-    ```
-
-- **Description**
-
-    A `GatewayAttestation` payload contains a `signature` from the Gateway's BLS private key over a `blockhash`. The `signature` serves as an attestation that a block with this `blockhash` satisfies the `SignedConstraints` issued by the Gateway. The Gateway is assumed to obtain the `blockhash` from the `VersionedSignedBuilderBidWithProofs.header.block_hash`, and expected to only sign if the constraints are satisfied by verifying the proofs. 
-
-- **Example Payload**
-    ```json
-    {
-        "blockhash": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-        "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
-    }
-    ```
-
-
 # Annotated Sequence Diagram
 ```mermaid
 sequenceDiagram
@@ -631,8 +457,8 @@ autonumber
     participant User
 
     Proposer->>Relay: POST /delegate
-    Builder->>Relay: GET /delegate
-    Gateway->>Relay: GET /delegate
+    Builder->>Relay: GET /delegations
+    Gateway->>Relay: GET /delegations
     User->>Wallet: POST /eth_sendTransaction
     Wallet->>Gateway: POST /eth_sendTransaction
     Gateway->>Gateway: Process transaction
@@ -649,11 +475,9 @@ autonumber
         Builder->>Builder: Generate proof
     end
     Builder->>Relay: POST /blocks_with_proofs
-    Gateway->>Relay: GET /header_with_proofs
-    Gateway->>Relay: POST /attestation
+    Relay->>Relay: verify proofs
     Relay->>Relay: PBS Auction
-    Proposer->>Relay: GET /header_with_attestation
-    Proposer->>Proposer: Verify Gateway signature
+    Proposer->>Relay: GET /header
     Proposer<<-->>Relay: POST /blinded_blocks
     Proposer->>Proposer: Propose block
     Note over User: Receive L1 confirmation
@@ -677,14 +501,12 @@ autonumber
 
 - (14) Builder sends `VersionedSubmitBlockRequestWithProofs` to Relay
 
-- (15) Gateway verifies block follows constraints by checking proofs against the block header
+- (15) Relay verifies block follows constraints by checking proofs against the block
 
-- (16) Gateway posts their attestation, containing a signature over the builder's `blockhash`
+- (16) Relay performs standard PBS auction
 
-- (17) Relay performs standard PBS auction
+- (17) Proposer requests a header as per normal PBS
 
-- (18-19) Proposer verifies Gateway signature against the block header matches their Delegation
+- (18) Proposer submits their signed blinded block to Relay
 
-- (20) Proposer submits their signed blinded block to Relay
-
-- (21) Proposer receives execution payload and proposes block to L1
+- (19) Proposer receives execution payload and proposes block to L1
