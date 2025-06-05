@@ -163,6 +163,7 @@ def is_eligible_for_delegation(state: BeaconState, validator: Validator) -> bool
 ```python
 def verify_delegation_signature(signed_delegation: SignedDelegation) -> bool:
     pubkey = signed_delegation.message.proposer
+    # note abi-encoded, not SSZ
     message = abi.encode(signed_delegation.message)
     signing_root = keccak256(abi.encode_packed(DELEGATION_DOMAIN_SEPARATOR, message))
     return bls.Verify(pubkey, signing_root, signed_delegation.signature)
@@ -173,9 +174,9 @@ A `delegation` is considered valid if the following function completes without r
 
 ```python
 def process_delegation(state: BeaconState,
-                         signed_delegation: SignedDelegation,
-                         delegations: Dict[BLSPubkey, Delegation],
-                         current_timestamp: uint64):
+                       signed_delegation: SignedDelegation,
+                       delegations: Dict[BLSPubkey, Delegation],
+                       current_timestamp: uint64):
     signature = signed_delegation.signature
     delegation = signed_delegation.message
 
@@ -239,13 +240,27 @@ The Gateway will package one or more `Constraint` objects into a `ConstraintsMes
 The Gateway will sign the `ConstraintsMessage` using the private key corresponding to the `Delegation.delegate` BLS public key.
 
 ```python
-    domain = compute_domain(DOMAIN_APPLICATION_GATEWAY, fork_version=None, genesis_validators_root=None)
-    signing_root = compute_signing_root(constraints_message, domain)
-    signature = bls.sign(delegate_bls_private_key, signing_root)
+class get_signed_constraints(
+    constraints: List[Constraint], 
+    proposer: BLSPubkey, 
+    slot: int, 
+    receivers: List[BLSPubkey], 
+    privkey: int) -> SignedConstraints:
+
+    message = ConstraintsMessage(
+        proposer: proposer,
+        delegate: bls_pubkey_from_privkey(privkey),
+        slot: slot,
+        constraints: constraints,
+        receivers: receivers)
+    
+    # note abi-encoded, not SSZ
+    message = abi.encode(message)
+    signing_root = keccak256(abi.encode_packed(DOMAIN_APPLICATION_GATEWAY, message))
+    signature = bls.Sign(privkey, signing_root)
+    
+    return SignedConstraints(message: message, signature: signature)
 ```
-
-The `signature` is included in the `SignedConstraints` container when responding to the `postConstraints` request.
-
 
 ### Disseminating constraints
 The Gateway will disseminate constraints by posting the `SignedConstraints` to the `postConstraints` endpoint in the [Constraints API](https://eth-fabric.github.io/constraints-specs/#/Constraints%20API/postConstraints).
