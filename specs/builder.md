@@ -152,7 +152,7 @@ signature = bls.sign(builder_private_key, signing_root)
 
 The Builder will include the `signature` in the request header of the `getConstraints` or `getConstraintsStream` which the relay will check against the BLS public keys in the `receivers` field of the `ConstraintsMessage`.
 
-The Relay is required to abort the request if the signature is invalid or the Builder's BLS public key is not in the `receivers` list.
+The Relay is required to abort the request if the signature is invalid or the Builder's BLS public key is not in the `ConstraintsMessage.receivers` list.
 
 ### `verify_builder_slot_signature`
 ```python
@@ -171,7 +171,7 @@ def verify_constraint_signature(signed_constraints: SignedConstraints) -> bool:
 ```
 
 ### `process_constraints`
-A set of constraints is considered valid if the following function completes without raising any assertions:
+A `SignedConstraints` is considered valid if the following function completes without raising any assertions:
 
 ```python
 def process_constraints(state: BeaconState,
@@ -221,7 +221,7 @@ def get_bid_with_proofs(
     payload: ExecutionPayload,
     value: uint256,
     pubkey: BLSPubkey,
-    constraints: List[SignedConstraints]
+    constraints: SignedConstraints
 ) -> SignedBuilderBidWithProofs:
     header = ExecutionPayloadHeader(
         parent_hash=payload.parent_hash,
@@ -261,4 +261,4 @@ The exact method for generating proofs depends on the `constraintType`. Each `co
 3. The format of the proof payload
 
 ### Submitting a block
-The Builder can submit their block and proofs to the relay by calling the `submitBlocksWithProofs` [endpoint](https://eth-fabric.github.io/constraints-specs/#/Constraints%20API/submitBlocksWithProofs).
+The Builder can submit their block and proofs to the relay by posting to the `submitBlocksWithProofs` [endpoint](https://eth-fabric.github.io/constraints-specs/#/Constraints%20API/submitBlocksWithProofs).
