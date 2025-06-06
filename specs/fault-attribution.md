@@ -9,6 +9,10 @@ The goal of this proposal is to offer a practical pattern for fault resolution. 
 
 This approach reflects ongoing discussions across teams building Gateways, Relays, and preconf protocols, and is intended as a shared reference point for implementations.
 
+- *Importantly, it should be noted that this approach remains compatible with self-delegation, where a Proposer operates their own Gateway.*
+
+- *This document is not part of the base spec, rather is a reference to help better understand fault-attribution in the context of the Constraints API.*
+
 ## Background
 The Constraints API was originally based off of a narrow, focused goal: to enable L1 inclusion preconfirmations issued directly by the L1 proposer. In this non-delegated model, the proposer created commitments and constraints themselves, retaining full visibility and enabling trustless verification via proofs against the block header.
 
@@ -62,6 +66,9 @@ Understanding who is at fault requires knowing the mapping from `Commitment` to 
 
 Fault attribution is very dependent on the *completeness* of `SignedConstraints`, hence the importance of the Relay to make them available and only accept new `SignedConstraints` up to a certain cutoff time.
 
+## Potential modes of relaying
+The following modes serve as implementation guidance rather than prescriptive rules. From the perspective of the spec, these modes are indistinguishable—each simply represents a different strategy for leveraging the `ConstraintProofs` field. This is similar to how “optimistic relaying” emerged as an optimization within PBS: adopted in practice but not enshrined in the spec.
+
 ### Optimistic relaying
 This mode favors optimizes for performance over safety. By omitting heavy proof generation and verification, more time is available to build the block, potentially increasing the value of the block. However, this introduces the possibility that an invalid block is relayed to the Proposer, in which case the Builder should be penalized. The Proposer should decide whether to enable optimistic relaying, i.e., in their `Delegation.metadata` field.
 1.	Gateway posts `SignedConstraints` to the Relay.
@@ -78,7 +85,7 @@ Conversely, this mode favors optimizes for safety over performance. Builders are
 
 ### Mapping faults
 The following table summarizes the different outcomes. Note for brevity the table omits when a proposer self-builds, in which case they are liable if there is a safety fault.
-| Relaying Type | Complete SignedConstraints available | Block satisfies SignedConstraints | Block relayed to proposer | Outcome         |
+| Relaying Type | SignedConstraints are complete | Block satisfies SignedConstraints | Block relayed to proposer | Outcome         |
 |---------------|--------------------------------------|-----------------------------------|----------------------------|------------------|
 | Optimistic    | No                                   | No                                | No                         | Slot missed      |
 | Optimistic    | No                                   | No                                | Yes                        | Gateway slashed  |
