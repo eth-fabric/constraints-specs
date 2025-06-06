@@ -141,7 +141,7 @@ There are three types of data to sign over in the Builder API:
 The regstration spec is unchanged from the [Builder Spec](https://github.com/ethereum/builder-specs/blob/main/specs/bellatrix/builder.md#validator-registration-processing), specifically validators will still sign `ValidatorRegistration` messages to register to begin working with Relays and Builders.
 
 ## Constraint Processing
-A Builder can retrieve constraints from Relays by calling the `getConstraints` [endpoint](https://eth-fabric.github.io/constraints-specs/#/Constraints%20API/getConstraints) or `getConstraintsStream` [endpoint](https://eth-fabric.github.io/constraints-specs/#/Constraints%20API/getConstraintsStream).
+A Builder can retrieve constraints from Relays by calling the `getConstraints` [endpoint](https://eth-fabric.github.io/constraints-specs/#/Constraints%20API/getConstraints).
 
 For authorization, the Builder will sign the current `slot` number with their BLS private key as follows: 
 ```python
@@ -150,7 +150,7 @@ signing_root = compute_signing_root(slot, domain)
 signature = bls.sign(builder_private_key, signing_root)
 ```
 
-The Builder will include the `signature` in the request header of the `getConstraints` or `getConstraintsStream` which the relay will check against the BLS public keys in the `receivers` field of the `ConstraintsMessage`.
+The Builder will include the `signature` in the request header of the `getConstraints` which the relay will check against the BLS public keys in the `receivers` field of the `ConstraintsMessage`.
 
 The Relay is required to abort the request if the signature is invalid or the Builder's BLS public key is not in the `ConstraintsMessage.receivers` list.
 

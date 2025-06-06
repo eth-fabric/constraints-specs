@@ -48,7 +48,6 @@ Since the proposer commitment space is still nascent, our goal is to design a ge
 | `constraints`   | `GET` | [/constraints/v0/builder/capabilities](./constraints-api.md#endpoint-constraintsv0buildercapabilities)         | Endpoint to retrieve the constraint capabilities of the Relay. |
 | `constraints`   | `GET` | [/constraints/v0/relay/delegations](./constraints-api.md#endpoint-constraintsv0relaydelegationsslot)         | Endpoint to retrieve the signed delegations for the proposer of a given slot, if it exists. |
 | `constraints`   | `GET` | [/constraints/v0/relay/constraints](./constraints-api.md#endpoint-constraintsv0relayconstraintsslot)         | Endpoint to retrieve the signed constraints for a given slot. |
-| `constraints`   | `GET` | [/constraints/v0/relay/constraints_stream](./constraints-api.md#endpoint-constraintsv0relayconstraints_streamslot)  | Endpoint to retrieve an SSE stream of signed constraints. |
 | `constraints`   | `POST` | [/constraints/v0/relay/blocks_with_proofs](./constraints-api.md#endpoint-constraintsv0relayblocks_with_proofscancellations) | Endpoint for Builder to submit a block with proofs of constraint validity to the Relay. |
 
 ---
@@ -274,55 +273,6 @@ Returns all signed constraints for a given slot, if they exist. The request requ
 
     The Relay should only return signed constraints that were signed by the proposer or a gateway that was delegated to by the proposer.
 
----
-
-### Endpoint: `/constraints/v0/relay/constraints_stream/{slot}`
-
-Returns a stream of constraints via Server-Sent Events (SSE). The request requires authorization via the `X-Receiver-Signature` header which is a BLS signature over the requested `slot` number. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`.
-
-- **Method:** `GET`
-- **Response:**  Server-sent events containing `SignedConstraints[]` objects
-- **Parameters:**
-    - `slot`: `string` (regex `[0-9]+`)
-- **Body:** Empty
-- **Headers**:
-    - `Content-Type: text/event-stream`
-    - `Cache-Control: no-cache`
-    - `Connection: keep-alive`
-    - `X-Receiver-Signature: <BLS signature>`
-- **Example Response**
-    ```json
-    event: json
-    data: [
-        {
-            "message": {
-                "proposer": "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a",
-                "delegate": "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a",
-                "slot": "12345",
-                "constraints": [
-                    {
-                        "constraintType": "0x00",
-                        "payload": "0x301d0790347320302cc0943d5a1884560367e8208d920f2e9587369b2301de9587369b2301d0790347320302cc0"
-                    },
-                    {
-                        "constraintType": "0x01",
-                        "payload": "0x367e8208d920f2e9587369b2301de9587369b2301d0790347320302cc0301d0790347320302cc0943d5a1884560367e8208d920f2e958"
-                    }
-                ],
-                "receivers": [
-                    "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a",
-                    "0x84e47f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74b"
-                ]
-            },
-            "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
-        }
-    ]
-
-    ```
-- **Description**
-
-    This endpoint is a streaming endpoint meant to reduce round-trip latency via SSE, allowing Relays to push new constraints to Builders in realtime.
-    The Relay should only return signed constraints that were signed by the proposer or a gateway that was delegated to by the proposer.
 ---
 
 ### Endpoint: `/constraints/v0/relay/blocks_with_proofs/{cancellations}`
