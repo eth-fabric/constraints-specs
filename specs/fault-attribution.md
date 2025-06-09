@@ -55,7 +55,7 @@ The Relay is assumed to filter out invalid blocks. Specifically, it must reject 
 The Relay is assumed to act as a DA layer for `SignedConstraints`:
 - It accepts and saves `SignedConstraints` messages from Gateways.
 - It enforces a cutoff time for accepting `SignedConstraints` per slot. This ensures Builders can rely on a consistent set of constraints when building blocks and prevents Gateways from submitting constraints after the fact to avoid fault.
-- If slashing occurs, the Relay must publish the relevant `SignedConstraints` to a slasher contract, where it has been pre-whitelisted to do so.
+- After the target slot has elapsed, the Relay should make the `SignedConstraints` available via the Relay Data API, irrespective of the `SignedConstraints.message.receivers` field.
 
 ## Fault Attribution
 Understanding who is at fault requires knowing the mapping from `Commitment` to `Constraint`, which must be publicly accessible. From this, slashing conditions are as follows:
