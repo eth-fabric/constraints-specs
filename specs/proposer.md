@@ -43,11 +43,11 @@
 
 ## Introduction
 
-This document explains the way in which an honest Proposer is expected to use the [Constraints API](https://eth-fabric.github.io/constraints-specs/) and [Universal Registry Contract](https://github.com/eth-fabric/urc) (URC) to issue proposer commitments. The language and format of this document is meant to mirror the original [Honest Validator guide in the Builder Specs](https://github.com/ethereum/builder-specs/blob/main/specs/bellatrix/validator.md#bellatrix----honest-validator). At a high-level, a proposer will mirror the flow of the Honest Validator guide in the Builder Specs but with a few additional registration and verification steps. 
+This document explains the way in which an honest Proposer is expected to use the [Constraints API](https://eth-fabric.github.io/constraints-specs/) and [Universal Registry Contract](https://github.com/eth-fabric/urc) (URC) to issue proposer commitments. The language and format of this document is meant to mirror the original [Honest Validator guide in the Builder Specs](https://github.com/ethereum/builder-specs/blob/main/specs/bellatrix/validator.md#bellatrix----honest-validator). At a high-level, a proposer will mirror the flow of the Honest Validator guide in the Builder Specs but with a few additional registration. 
 
 There is a one-time registration step where proposers post collateral and register their BLS keys on-chain to the URC. After a fraud-proof window, proposers will sign off-chain `Delegation` messages for Gateways to know which slots they are responsible for issuing commitments for. 
 
-Gateways are then responsible for issuing proposer commitments on behalf of proposers via the [Commitments API](https://github.com/eth-fabric/commitments-specs) and then instructing Builders how to construct a valid L1 block via signed `Constraint` messages. When it is the proposer’s turn to propose the next block, they proceed as normal for the Builder Specs except they additionally verify a proof that their block satisfies the constraints. In the event that a proposer commitment is broken, the proposer’s collateral can be slashed by supplying evidence to the URC. 
+Gateways are then responsible for issuing proposer commitments on behalf of proposers via the [Commitments API](https://github.com/eth-fabric/commitments-specs) and then instructing Builders how to construct a valid L1 block via signed `Constraint` messages. When it is the proposer’s turn to propose the next block, they proceed as normal for the Builder Specs (i.e., calling `GET /header`). In the event that a proposer commitment is broken, the proposer’s collateral can be slashed by supplying evidence to the URC (see the [fault attribution guidelines](fault-attribution.md) file for more information). 
 
 ## Prerequisites
 This document assumes knowledge of the terminology, definitions, and other material in the Builder spec, Constraints API, Commitments API, and URC.
@@ -107,20 +107,39 @@ The proposer will register to the URC by submitting `Registration` messages for 
 2. The proposer generates a signature with the BLS key they wish to register.
 
     ```python
-    message = abi.encode(owner_address)
-    signature = BLS.sign(message, bls_private_key, REGISTRATION_DOMAIN_SEPARATOR)
+    def get_urc_registration_signature(
+        owner: Address,
+        privkey: int
+    ) -> BLSSignature:
+        # note: abi-encoded, not SSZ
+        message = abi.encode(owner)
+        return BLS.sign(message, privkey, REGISTRATION_DOMAIN_SEPARATOR)
     ```
 
 3. The `signature` is placed in a `SignedRegistration` object with the BLS public key.
 
-```python
+    ```python
     class SignedRegistration(Container):
-        pubkey: BLS.G1Point
-        signature: BLS.G2Point
-```
+        pubkey: BLS.G1Point # note the encoding matches URC not beacon specs
+        signature: BLS.G2Point # note the encoding matches URC not beacon specs
+    ```
 
 #### **Signing and submitting a registration**
-The proposer will repeat steps 2-3 for each BLS key they wish to register. Once all registrations are prepared, the proposer will submit them to the URC via the `register()` function.
+The proposer will repeat steps 2-3 for each BLS key they wish to register. Once all registrations are prepared, the proposer will package the `SignedRegistration` objects.
+
+```python
+def get_signed_registration(
+    sigs: List[BLSSignature],
+    pubkeys: List[BLSPubkey]
+) -> List[SignedRegistration]:
+    # encode to BLS.G1Point and BLS.G2Point
+    return [
+        SignedRegistration(to_g1_point(pk), to_g2_point(sig))
+        for pk, sig in zip(sigs, pubkeys)
+    ]
+```
+
+They will then submit them to the URC via the `register()` function.
 ```Solidity
 function register(SignedRegistration[] registrations, address owner)
     external payable returns (bytes32 registrationRoot)
@@ -166,8 +185,14 @@ It is not required but is assumed that the `delegate` and `committer` private ke
 1. The proposer generates a `signature` with the BLS key they wish to delegate.
 
     ```Python
-    message = abi.encode(delegation)
-    signature = BLS.sign(message, bls_private_key, DELEGATION_DOMAIN_SEPARATOR)
+    def get_delegation_signature(
+        delegation: Delegation,
+        privkey: int
+    ) -> SignedDelegation:
+        # note: abi-encoded, not SSZ
+        message = abi.encode(delegation)
+        signature = BLS.sign(message, privkey, DELEGATION_DOMAIN_SEPARATOR)
+        return SignedDelegation(message=delegation, signature=signature)
     ```
 
     Note RLP encoding is used instead of SSZ for simpler on-chain verification.
@@ -209,50 +234,9 @@ function optInToSlasher(bytes32 registrationRoot, address slasher, address commi
 This function can only be called after the proposer has registered to the URC and the `FRAUD_PROOF_WINDOW` has elapsed.
 
 ## Block Proposals
-The following steps largely follow the Builder Spec with step 2 being the only additional verification step to ensure the proposer commitment is satisfied.
-
-### Constructing the `BeaconBlockBody`
-#### `ExecutionPayload`
-
-To obtain an execution payload, a proposer must take the following actions:
-
-1. Call the `getHeaderWithProofs` endpoint in the [Constraints API](https://eth-fabric.github.io/constraints-specs/#/Constraints%20API/getHeaderWithProofs) to get an `ExecutionPayloadHeader` with the required data `slot`, `parent_hash`, and `pubkey`, where:
-- `slot` is the proposal's slot
-- `parent_hash` is the value `state.latest_execution_payload_header.block_hash`
-- `pubkey` is the proposer's public key
-
-2. Verify the `ConstraintProofs` against the `ExecutionPayloadHeader` to ensure that the constraints are satisfied.
-
-3. Assemble a `BlindedBeaconBlock` according to the process outlined in the Electra specs but with the `ExecutionPayloadHeader` from the prior step in lieu of the full `ExecutionPayload`.
-
-4. The proposer signs the `BlindedBeaconBlock` and assembles a `SignedBlindedBeaconBlock` which is returned to the upstream builder software by calling the `submitBlindedBlock` endpoint in the [Builder API](https://ethereum.github.io/builder-specs/#/Builder/submitBlindedBlock).
-
-5. The upstream builder software responds with the full `ExecutionPayload`. The proposer can use this payload to assemble a `SignedBeaconBlock` following the rest of the proposal process outlined in the Electra specs.
-
-#### Bid processing
-Bids received from step (1) above can be validated with `process_bid` below, where `state` corresponds to the state for the proposal without applying the block (currently under construction) and `fee_recipient` corresponds to the validator's most recently registered fee recipient address:
-```Python
-def verify_bid_signature(state: BeaconState, signed_bid: SignedBuilderBidWithProofs) -> bool:
-    pubkey = signed_bid.message.pubkey
-    domain = compute_domain(DOMAIN_APPLICATION_BUILDER)
-    signing_root = compute_signing_root(signed_registration.message, domain)
-    return bls.Verify(pubkey, signing_root, signed_bid.signature)
-```
-A bid is considered valid if the following function completes without raising any assertions:
-
-```Python
-def process_bid(state: BeaconState, bid: SignedBuilderBidWithProofs, fee_recipient: ExecutionAddress):
-    # Verify execution payload header
-    header = bid.message.header
-    assert header.parent_hash == state.latest_execution_payload_header.block_hash
-    assert header.fee_recipient == fee_recipient
-    
-    # Verify bid proofs
-    verify_bid_proofs(state, bid)
-
-    # Verify bid signature
-    verify_bid_signature(state, bid)
-```
+Block proposal mirror the Builder Spec. The following links are here for reference:
+- [Constructing the `BeaconBlockBody`](https://github.com/ethereum/builder-specs/blob/main/specs/bellatrix/validator.md#constructing-the-beaconblockbody)
+- [Bid processing](https://github.com/ethereum/builder-specs/blob/main/specs/bellatrix/validator.md#bid-processing)
 
 ## Proposer Deregistration
 Unlike the Builder spec, proposer commitments require collateral to be posted to the URC so there is a need to define the deregistration process.
@@ -264,7 +248,7 @@ The spec does not support undelegating from Gateways as it introduces race condi
 Unregistering from the URC is a two-step process:
 
 #### Calling `unregister()`
-The `owner` address of the URC can call `unregister()` to initiate the deregistration process, saving the block timestamp that it was called.
+The proposer's `owner` address in the URC can call `unregister()` to initiate the deregistration process, saving the block timestamp that it was called.
 
 ```Solidity
 function unregister(bytes32 registrationRoot) external;
@@ -277,7 +261,7 @@ The `owner` address can call `claimCollateral()` to retrieve their collateral af
 function claimCollateral(bytes32 registrationRoot) external;
 ```
 
-The proposer's collateral is transferred to the `owner` address.
+The proposer's collateral is transferred to their `owner` address.
 
 #### Special case: `claimSlashedCollateral()`
 
