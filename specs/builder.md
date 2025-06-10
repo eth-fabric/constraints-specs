@@ -59,11 +59,12 @@ Some nuances:
 | `DOMAIN_APPLICATION_GATEWAY` | TBD |
 | `DELEGATION_DOMAIN_SEPARATOR` | `DomainType('0x0044656c')` |
 
-#### Time parameters
+#### Constraints parameters
 
-| Name | Value | Unit | Duration |
-| - | - | - | - |
-| `MAX_CONSTRAINTS_PER_SLOT` | `uint64(256)` | count | 256 constraints |
+| Name | Value |
+| - | - |
+| `CONSTRAINTS_SUBMISSION_DEADLINE` | 8 seconds |
+| `MAX_CONSTRAINTS_PER_SLOT` | `uint64(256)` |
 
 ### Containers
 
@@ -141,9 +142,9 @@ There are three types of data to sign over in the Builder API:
 The regstration spec is unchanged from the [Builder Spec](https://github.com/ethereum/builder-specs/blob/main/specs/bellatrix/builder.md#validator-registration-processing), specifically validators will still sign `ValidatorRegistration` messages to register to begin working with Relays and Builders.
 
 ## Constraint Processing
-A Builder can retrieve constraints from Relays by calling the `getConstraints` [endpoint](https://eth-fabric.github.io/constraints-specs/#/Constraints%20API/getConstraints).
+`SignedConstraints` are expected to be submitted within the `CONSTRAINTS_SUBMISSION_DEADLINE`, after which a Builder can retrieve constraints from Relays by calling the `getConstraints` [endpoint](https://eth-fabric.github.io/constraints-specs/#/Constraints%20API/getConstraints).
 
-For authorization, the Builder will sign the current `slot` number with their BLS private key as follows: 
+For authorization, the Builder will sign the upcoming `slot` number (head + 1) with their BLS private key as follows: 
 ```python
 domain = compute_domain(DOMAIN_APPLICATION_BUILDER)
 signing_root = compute_signing_root(slot, domain)

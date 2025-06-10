@@ -78,6 +78,12 @@ Some nuances:
 | `FRAUD_PROOF_WINDOW` | 86400 seconds |
 | `SLASH_WINDOW` | 86400 seconds |
 
+#### Constraints parameters
+
+| Name | Value |
+| - | - |
+| `CONSTRAINTS_SUBMISSION_DEADLINE` | 8 seconds |
+
 
 ### Containers
 #### Delegation
@@ -263,4 +269,4 @@ class get_signed_constraints(
 ```
 
 ### Disseminating constraints
-The Gateway will disseminate constraints by posting the `SignedConstraints` to the `postConstraints` endpoint in the [Constraints API](https://eth-fabric.github.io/constraints-specs/#/Constraints%20API/postConstraints).
+The Gateway will disseminate constraints by posting the `SignedConstraints` to the `postConstraints` endpoint in the [Constraints API](https://eth-fabric.github.io/constraints-specs/#/Constraints%20API/postConstraints). To be considered for inclusion, the Gateway is required to submit the `SignedConstraints` within `CONSTRAINTS_SUBMISSION_DEADLINE` seconds into the slot.
