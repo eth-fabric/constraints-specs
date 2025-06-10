@@ -133,7 +133,7 @@ A proposer can delegate constraint submission rights by signing a Delegate messa
       tags:
         - Constraints API
       summary: "Endpoint to retrieve the signed constraints for a given slot"
-      description: "For a given slot, the Relay should only return signed constraints that were signed by the L1 proposer or a gateway that was delegated to by the proposer. The request requires authorization via the `X-Receiver-Signature` header which is a BLS signature over the requested `slot` number. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`.
+      description: "For a given slot, the Relay should only return signed constraints that were signed by the L1 proposer or a gateway that was delegated to by the proposer. The request requires authorization via the `X-Receiver-Signature` header which is a BLS signature over the requested `slot` number and the `X-Receiver-PublicKey` header which is the corresponding BLS public key. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`.
       "
       parameters:
         - name: slot
@@ -146,6 +146,11 @@ A proposer can delegate constraint submission rights by signing a Delegate messa
           required: true
           schema:
               $ref: "./beacon-apis/types/primitive.yaml#/Signature"
+        - name: X-Receiver-PublicKey
+          in: header
+          required: true
+          schema:
+              $ref: "./beacon-apis/types/primitive.yaml#/Pubkey"
       responses:
         "200":
           description: "OK"

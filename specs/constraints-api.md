@@ -240,6 +240,7 @@ Returns all signed constraints for a given slot, if they exist. The request requ
 - **Headers:**
     - `Content-Type: application/json`
     - `X-Receiver-Signature: <BLS signature>`
+    - `X-Receiver-PublicKey: <BLS public key>`
 
 - **Example Response**
     ```json

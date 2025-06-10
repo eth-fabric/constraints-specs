@@ -151,7 +151,7 @@ signing_root = compute_signing_root(slot, domain)
 signature = bls.sign(builder_private_key, signing_root)
 ```
 
-The Builder will include the `signature` in the request header of the `getConstraints` which the relay will check against the BLS public keys in the `receivers` field of the `ConstraintsMessage`.
+The Builder will include the `signature` and their BLS public key in the request header of the `getConstraints` which the relay will check against the BLS public keys in the `receivers` field of the `ConstraintsMessage`.
 
 The Relay is required to abort the request if the signature is invalid or the Builder's BLS public key is not in the `ConstraintsMessage.receivers` list.
 
