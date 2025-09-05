@@ -8,7 +8,7 @@ The goal of this effort was to define API standards to enable proposer commitmen
 
 The spec is largely an extension of the PBS pipeline (see high-level flow below and more details [here](https://github.com/ethereum-commitments/commitment-specs/blob/main/specs/preconf-api.md). 
 
-![image](https://github.com/user-attachments/assets/0b402fa0-bade-429f-b8cd-fcbd06adc572)
+![image.png](./img/constraints-api-diagram.png)
 
 ### Render API Specification
 To render spec in browser, you will simply need an HTTP server to load the index.html file in root of the repo.
