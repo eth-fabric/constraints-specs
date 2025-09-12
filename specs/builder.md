@@ -56,8 +56,7 @@ Some nuances:
 | Name | Value |
 | - | - |
 | `DOMAIN_APPLICATION_BUILDER` | `DomainType('0x00000001')` |
-| `DOMAIN_APPLICATION_GATEWAY` | TBD |
-| `DELEGATION_DOMAIN_SEPARATOR` | `DomainType('0x0044656c')` |
+| `SIGNING_DOMAIN` | `Bytes32('0x00000000000000000000000000000000000000000000000000000000436f6d6d')` |
 
 #### Constraints parameters
 
@@ -165,10 +164,29 @@ def verify_builder_slot_signature(slot: uint64, builder_pubkey: BLSPubkey, signa
 
 ### `verify_constraint_signature`
 ```python
-def verify_constraint_signature(signed_constraints: SignedConstraints) -> bool:
-    domain = compute_domain(DOMAIN_APPLICATION_GATEWAY)
-    signing_root = compute_signing_root(signed_constraints.message, domain)
-    return bls.Verify(signed_constraints.message.delegate, signing_root, signed_constraints.signature)
+    class PropCommitSigningInfo(Container):
+        data: Bytes32
+        pub module_signing_id: Bytes32
+        pub nonce: Bytes32
+        pub chain_id: Bytes32
+    
+    class SigningData(Container):
+        object_root: Bytes32
+        signing_domain: Bytes32
+
+    def verify_constraint_signature(
+        signed_constraints: SignedConstraints,
+        signing_id: bytes32,
+        nonce: bytes32,
+        chainid: bytes32
+    ) -> bool:
+        # note the object root is abi-encoded, not SSZ
+        object_root = keccak256(abi.encode(signed_constraints.message))
+
+        # the rest is SSZ-encoded
+        comm_info = PropCommitSigningInfo(object_root, signing_id, nonce, chain_id)
+        signing_data = SigningData(comm_info.hash_tree_root(), SIGNING_DOMAIN) 
+        return BLS.verify(signed_constraints.message.delegate, signing_data.hash_tree_root(), signed_constraints.signature)
 ```
 
 ### `process_constraints`
