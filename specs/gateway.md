@@ -67,8 +67,7 @@ Some nuances:
 | Name | Value |
 | - | - |
 | `DOMAIN_APPLICATION_BUILDER` | `DomainType('0x00000001')` |
-| `DOMAIN_APPLICATION_GATEWAY` | TBD |
-| `DELEGATION_DOMAIN_SEPARATOR` | `DomainType('0x0044656c')` |
+| `SIGNING_DOMAIN` | `Bytes32('0x00000000000000000000000000000000000000000000000000000000436f6d6d')` |
 
 #### URC parameters
 
@@ -167,12 +166,31 @@ def is_eligible_for_delegation(state: BeaconState, validator: Validator) -> bool
 
 #### verify_delegation_signature
 ```python
-def verify_delegation_signature(signed_delegation: SignedDelegation) -> bool:
-    pubkey = signed_delegation.message.proposer
-    # note abi-encoded, not SSZ
-    message = abi.encode(signed_delegation.message)
-    signing_root = keccak256(abi.encode_packed(DELEGATION_DOMAIN_SEPARATOR, message))
-    return bls.Verify(pubkey, signing_root, signed_delegation.signature)
+    class PropCommitSigningInfo(Container):
+        data: Bytes32
+        pub module_signing_id: Bytes32
+        pub nonce: Bytes32
+        pub chain_id: Bytes32
+    
+    class SigningData(Container):
+        object_root: Bytes32
+        signing_domain: Bytes32
+
+    def verify_delegation_signature(
+        signed_delegation: SignedDelegation,
+        signing_id: bytes32,
+        nonce: bytes32,
+        chainid: bytes32
+    ) -> bool:
+        pubkey = signed_delegation.message.proposer
+
+        # note the object root is abi-encoded, not SSZ
+        object_root = keccak256(abi.encode(IRegistry.MessageType.Delegation, signed_delegation.message))
+
+        # the rest is SSZ-encoded
+        comm_info = PropCommitSigningInfo(object_root, signing_id, nonce, chain_id)
+        signing_data = SigningData(comm_info.hash_tree_root(), SIGNING_DOMAIN) 
+        return BLS.verify(pubkey, signing_data.hash_tree_root(), signed_delegation.signature)
 ```
 
 #### process_delegation
@@ -260,10 +278,13 @@ class get_signed_constraints(
         constraints: constraints,
         receivers: receivers)
     
-    # note abi-encoded, not SSZ
-    message = abi.encode(message)
-    signing_root = keccak256(abi.encode_packed(DOMAIN_APPLICATION_GATEWAY, message))
-    signature = bls.Sign(privkey, signing_root)
+    # note the object root is abi-encoded, not SSZ
+    object_root = keccak256(abi.encode(message))
+
+    # the rest is SSZ-encoded
+    comm_info = PropCommitSigningInfo(object_root, signing_id, nonce, chain_id)
+    signing_data = SigningData(comm_info.hash_tree_root(), SIGNING_DOMAIN) 
+    signature = BLS.sign(privkey, signing_data.hash_tree_root())
     
     return SignedConstraints(message: message, signature: signature)
 ```
