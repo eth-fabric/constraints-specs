@@ -82,8 +82,7 @@ Note the following constants are subject to change prior to the launch of the UR
 
 | Name | Value |
 | - | - |
-| `DELEGATION_DOMAIN_SEPARATOR` | `DomainType('0x0044656c')` |
-| `REGISTRATION_DOMAIN_SEPARATOR` | `DomainType('0x00435255')` |
+| `SIGNING_DOMAIN` | `Bytes32('0x00000000000000000000000000000000000000000000000000000000436f6d6d')` |
 
 ### URC parameters
 
@@ -107,13 +106,30 @@ The proposer will register to the URC by submitting `Registration` messages for 
 2. The proposer generates a signature with the BLS key they wish to register.
 
     ```python
+    class PropCommitSigningInfo(Container):
+        data: Bytes32
+        pub module_signing_id: Bytes32
+        pub nonce: Bytes32
+        pub chain_id: Bytes32
+    
+    class SigningData(Container):
+        object_root: Bytes32
+        signing_domain: Bytes32
+
     def get_urc_registration_signature(
         owner: Address,
-        privkey: int
+        privkey: int,
+        signing_id: bytes32,
+        nonce: bytes32,
+        chainid: bytes32
     ) -> BLSSignature:
-        # note: abi-encoded, not SSZ
-        message = abi.encode(owner)
-        return BLS.sign(message, privkey, REGISTRATION_DOMAIN_SEPARATOR)
+        # note the object root is abi-encoded, not SSZ
+        object_root = keccak256(abi.encode(IRegistry.MessageType.Registration, owner))
+
+        # the rest is SSZ-encoded
+        comm_info = PropCommitSigningInfo(object_root, signing_id, nonce, chain_id)
+        signing_data = SigningData(comm_info.hash_tree_root(), SIGNING_DOMAIN) 
+        return BLS.sign(privkey, signing_data.hash_tree_root())
     ```
 
 3. The `signature` is placed in a `SignedRegistration` object with the BLS public key.
@@ -141,7 +157,7 @@ def get_signed_registration(
 
 They will then submit them to the URC via the `register()` function.
 ```Solidity
-function register(SignedRegistration[] registrations, address owner)
+function register(SignedRegistration[] registrations, address owner, bytes32 signingId)
     external payable returns (bytes32 registrationRoot)
 ```
 
@@ -187,15 +203,20 @@ It is not required but is assumed that the `delegate` and `committer` private ke
     ```Python
     def get_delegation_signature(
         delegation: Delegation,
-        privkey: int
+        privkey: int,
+        signing_id: bytes32,
+        nonce: bytes32,
+        chainid: bytes32
     ) -> SignedDelegation:
-        # note: abi-encoded, not SSZ
-        message = abi.encode(delegation)
-        signature = BLS.sign(message, privkey, DELEGATION_DOMAIN_SEPARATOR)
+        # note the object root is abi-encoded, not SSZ
+        object_root = keccak256(abi.encode(IRegistry.MessageType.Delegation, delegation))
+
+        # the rest is SSZ-encoded
+        comm_info = PropCommitSigningInfo(object_root, signing_id, nonce, chain_id)
+        signing_data = SigningData(comm_info.hash_tree_root(), SIGNING_DOMAIN) 
+        signature = BLS.sign(privkey, signing_data.hash_tree_root())
         return SignedDelegation(message=delegation, signature=signature)
     ```
-
-    Note RLP encoding is used instead of SSZ for simpler on-chain verification.
 
 2. The `signature` is placed in a `SignedDelegation` object with the BLS public key.
     ```Python
