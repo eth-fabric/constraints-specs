@@ -283,10 +283,16 @@ components:
       properties:
         message:
           $ref: '#/components/schemas/Delegation'
+        nonce:
+          $ref: './beacon-apis/types/primitive.yaml#/Uint64'
+        signing_id:
+          $ref: './beacon-apis/types/primitive.yaml#/Bytes32'
         signature:
           $ref: './beacon-apis/types/primitive.yaml#/Signature'
       required:
         - message
+        - nonce
+        - signing_id
         - signature
     Delegation:
       type: object
@@ -314,6 +320,10 @@ components:
       properties:
         message:
           $ref: '#/components/schemas/ConstraintsMessage'
+        nonce:
+          $ref: './beacon-apis/types/primitive.yaml#/Uint64'
+        signing_id:
+          $ref: './beacon-apis/types/primitive.yaml#/Bytes32'
         signature:
             $ref: "./beacon-apis/types/primitive.yaml#/Signature"
       required:

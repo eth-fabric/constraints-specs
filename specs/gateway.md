@@ -67,7 +67,7 @@ Some nuances:
 | Name | Value |
 | - | - |
 | `DOMAIN_APPLICATION_BUILDER` | `DomainType('0x00000001')` |
-| `SIGNING_DOMAIN` | `Bytes32('0x00000000000000000000000000000000000000000000000000000000436f6d6d')` |
+| `SIGNING_DOMAIN` | `Bytes32('0x6d6d6f43719103511efa4f1362ff2a50996cccf329cc84cb410c5e5c7d351d03')` |
 
 #### URC parameters
 
@@ -98,6 +98,8 @@ class Delegation(Container):
 ```python
 class SignedDelegation(Container):
     message: Delegation
+    nonce: uint64
+    signing_id: Bytes32
     signature: BLS.G2Point
 ```
 
@@ -122,6 +124,8 @@ class ConstraintsMessage(Container):
 ```python
 class SignedConstraints(Container):
     message: ConstraintsMessage
+    nonce: uint64
+    signing_id: Bytes32
     signature: BLSSignature
 ```
 
@@ -169,8 +173,8 @@ def is_eligible_for_delegation(state: BeaconState, validator: Validator) -> bool
     class PropCommitSigningInfo(Container):
         data: Bytes32
         pub module_signing_id: Bytes32
-        pub nonce: Bytes32
-        pub chain_id: Bytes32
+        pub nonce: uint64
+        pub chainid: uint64
     
     class SigningData(Container):
         object_root: Bytes32
@@ -178,9 +182,9 @@ def is_eligible_for_delegation(state: BeaconState, validator: Validator) -> bool
 
     def verify_delegation_signature(
         signed_delegation: SignedDelegation,
-        signing_id: bytes32,
-        nonce: bytes32,
-        chainid: bytes32
+        signing_id: Bytes32,
+        nonce: uint64,
+        chainid: uint64
     ) -> bool:
         pubkey = signed_delegation.message.proposer
 
@@ -188,7 +192,7 @@ def is_eligible_for_delegation(state: BeaconState, validator: Validator) -> bool
         object_root = keccak256(abi.encode(IRegistry.MessageType.Delegation, signed_delegation.message))
 
         # the rest is SSZ-encoded
-        comm_info = PropCommitSigningInfo(object_root, signing_id, nonce, chain_id)
+        comm_info = PropCommitSigningInfo(object_root, signing_id, to_little_endian_Bytes32(nonce), to_little_endian_Bytes32(chainid))
         signing_data = SigningData(comm_info.hash_tree_root(), SIGNING_DOMAIN) 
         return BLS.verify(pubkey, signing_data.hash_tree_root(), signed_delegation.signature)
 ```
@@ -200,7 +204,8 @@ A `delegation` is considered valid if the following function completes without r
 def process_delegation(state: BeaconState,
                        signed_delegation: SignedDelegation,
                        delegations: Dict[BLSPubkey, Delegation],
-                       current_timestamp: uint64):
+                       current_timestamp: uint64,
+                       chainid: uint64):
     signature = signed_delegation.signature
     delegation = signed_delegation.message
 
@@ -215,7 +220,7 @@ def process_delegation(state: BeaconState,
     assert is_eligible_for_delegation(state, validator)
 
     # Verify delegation signature
-    assert verify_delegation_signature(signed_delegation)
+    assert verify_delegation_signature(signed_delegation, signed_delegation.signing_id, signed_delegation.nonce, chainid)
 ```
 
 ## Issuing commitments
@@ -269,7 +274,10 @@ class get_signed_constraints(
     proposer: BLSPubkey, 
     slot: int, 
     receivers: List[BLSPubkey], 
-    privkey: int) -> SignedConstraints:
+    privkey: int,
+    signing_id: Bytes32
+    nonce: uint64.
+    chainid: uint64) -> SignedConstraints:
 
     message = ConstraintsMessage(
         proposer: proposer,
@@ -282,11 +290,11 @@ class get_signed_constraints(
     object_root = keccak256(abi.encode(message))
 
     # the rest is SSZ-encoded
-    comm_info = PropCommitSigningInfo(object_root, signing_id, nonce, chain_id)
+    comm_info = PropCommitSigningInfo(object_root, signing_id,  to_little_endian_Bytes32(nonce), to_little_endian_Bytes32(chainid))
     signing_data = SigningData(comm_info.hash_tree_root(), SIGNING_DOMAIN) 
     signature = BLS.sign(privkey, signing_data.hash_tree_root())
     
-    return SignedConstraints(message: message, signature: signature)
+    return SignedConstraints(message: message, nonce: nonce, signing_id: signing_id, signature: signature)
 ```
 
 ### Disseminating constraints

@@ -74,6 +74,8 @@ Endpoint for submitting a batch of constraints to the relay. The constraints are
     # A signed "bundle" of constraints.
     class SignedConstraints(Container):
         message: ConstraintsMessage
+        nonce: uint64
+        signing_id: Bytes32
         signature: BLSSignature
 
     # A "bundle" of constraints for a specific slot.
@@ -108,8 +110,8 @@ Endpoint for submitting a batch of constraints to the relay. The constraints are
 
     Additional requirements:
 
-    - To ensure deterministic behavior for stateful constraints it is required for the ConstraintsMessage.Constraints[] to be processed in the order received.
-    - The ConstraintsMessage.Receivers[] field contains a list of public keys that are authorized to access these constraints. If this list is empty, the constraints are publicly accessible to anyone.
+    - To ensure deterministic behavior for stateful constraints it is required for the `ConstraintsMessage.Constraints[]` to be processed in the order received.
+    - The `ConstraintsMessage.Receivers[]` field contains a list of public keys that are authorized to access these constraints. If this list is empty, the constraints are publicly accessible to anyone.
 
 - **Example**
 
@@ -141,6 +143,8 @@ Endpoint for a Proposer to delegate constraint submission rights to a Gateway. T
     # A signed delegation
     class SignedDelegation(Container):
         message: Delegation
+        nonce: uint64
+        signing_id: Bytes32
         signature: BLSSignature
 
     # A delegation from a proposer to a BLS public key
@@ -216,6 +220,8 @@ Return the active delegations for the proposer of this slot, if they exist.
                 "slot": "12345",
                 "metadata": "0xe9587369b2301d0790347320302cc069b2301d0790347320302cc0943d5a1884560367e8208d920f2e9587369b2301de9587369b2301d0790347320302cc0"
             },
+            "nonce": 1337,
+            "signing_id": "0x3078313233340000000000000000000000000000000000000000000000000000",
             "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
         }
     ]
@@ -265,6 +271,8 @@ Returns all signed constraints for a given slot, if they exist. The request requ
                     "0x84e47f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74b"
                 ]
             },
+            "nonce": 1337,
+            "signing_id": "0x3078313233340000000000000000000000000000000000000000000000000000",
             "signature": "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505"
         }
     ]
