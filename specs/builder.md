@@ -56,8 +56,7 @@ Some nuances:
 | Name | Value |
 | - | - |
 | `DOMAIN_APPLICATION_BUILDER` | `DomainType('0x00000001')` |
-| `DOMAIN_APPLICATION_GATEWAY` | TBD |
-| `DELEGATION_DOMAIN_SEPARATOR` | `DomainType('0x0044656c')` |
+| `SIGNING_DOMAIN` | `Bytes32('0x6d6d6f43719103511efa4f1362ff2a50996cccf329cc84cb410c5e5c7d351d03')` |
 
 #### Constraints parameters
 
@@ -91,6 +90,8 @@ class ConstraintsMessage(Container):
 ```python
 class SignedConstraints(Container):
     message: ConstraintsMessage
+    nonce: uint64
+    signing_id: Bytes32
     signature: BLSSignature
 ```
 
@@ -165,10 +166,29 @@ def verify_builder_slot_signature(slot: uint64, builder_pubkey: BLSPubkey, signa
 
 ### `verify_constraint_signature`
 ```python
-def verify_constraint_signature(signed_constraints: SignedConstraints) -> bool:
-    domain = compute_domain(DOMAIN_APPLICATION_GATEWAY)
-    signing_root = compute_signing_root(signed_constraints.message, domain)
-    return bls.Verify(signed_constraints.message.delegate, signing_root, signed_constraints.signature)
+    class PropCommitSigningInfo(Container):
+        data: Bytes32
+        pub module_signing_id: Bytes32
+        pub nonce: uint64
+        pub chain_id: uint64
+    
+    class SigningData(Container):
+        object_root: Bytes32
+        signing_domain: Bytes32
+
+    def verify_constraint_signature(
+        signed_constraints: SignedConstraints,
+        signing_id: bytes32,
+        nonce: uint64,
+        chainid: uint64
+    ) -> bool:
+        # note the object root is abi-encoded, not SSZ
+        object_root = keccak256(abi.encode(signed_constraints.message))
+
+        # the rest is SSZ-encoded
+        comm_info = PropCommitSigningInfo(object_root, signing_id, to_little_endian_bytes32(nonce), to_little_endian_bytes32(chain_id))
+        signing_data = SigningData(comm_info.hash_tree_root(), SIGNING_DOMAIN) 
+        return BLS.verify(signed_constraints.message.delegate, signing_data.hash_tree_root(), signed_constraints.signature)
 ```
 
 ### `process_constraints`
@@ -177,7 +197,8 @@ A `SignedConstraints` is considered valid if the following function completes wi
 ```python
 def process_constraints(state: BeaconState,
                        signed_constraints: SignedConstraints,
-                       delegations: Dict[BLSPubkey, Delegation]) -> bool:
+                       delegations: Dict[BLSPubkey, Delegation],
+                       chainid: uint64) -> bool:
     constraints = signed_constraints.message
     
     # Verify delegate has authority from proposer
@@ -189,7 +210,7 @@ def process_constraints(state: BeaconState,
     assert len(constraints.constraints) <= MAX_CONSTRAINTS_PER_SLOT
     
     # Verify constraint signature
-    assert verify_constraint_signature(signed_constraints)
+    assert verify_constraint_signature(signed_constraints, signed_constraints.signing_id, signed_constraints.nonce, chainid)
     
     # Verify slot matches delegation
     assert constraints.slot == delegation.slot

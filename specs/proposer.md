@@ -82,8 +82,7 @@ Note the following constants are subject to change prior to the launch of the UR
 
 | Name | Value |
 | - | - |
-| `DELEGATION_DOMAIN_SEPARATOR` | `DomainType('0x0044656c')` |
-| `REGISTRATION_DOMAIN_SEPARATOR` | `DomainType('0x00435255')` |
+| `SIGNING_DOMAIN` | `Bytes32('0x6d6d6f43719103511efa4f1362ff2a50996cccf329cc84cb410c5e5c7d351d03')` |
 
 ### URC parameters
 
@@ -107,13 +106,30 @@ The proposer will register to the URC by submitting `Registration` messages for 
 2. The proposer generates a signature with the BLS key they wish to register.
 
     ```python
+    class PropCommitSigningInfo(Container):
+        data: Bytes32
+        pub module_signing_id: Bytes32
+        pub nonce: uint64
+        pub chainid: uint64
+    
+    class SigningData(Container):
+        object_root: Bytes32
+        signing_domain: Bytes32
+
     def get_urc_registration_signature(
         owner: Address,
-        privkey: int
+        privkey: int,
+        signing_id: Bytes32,
+        nonce: uint64,
+        chainid: uint64
     ) -> BLSSignature:
-        # note: abi-encoded, not SSZ
-        message = abi.encode(owner)
-        return BLS.sign(message, privkey, REGISTRATION_DOMAIN_SEPARATOR)
+        # note the object root is abi-encoded, not SSZ
+        object_root = keccak256(abi.encode(IRegistry.MessageType.Registration, owner))
+
+        # the rest is SSZ-encoded
+        comm_info = PropCommitSigningInfo(object_root, signing_id, to_little_endian_Bytes32(nonce), to_little_endian_Bytes32(chainid))
+        signing_data = SigningData(comm_info.hash_tree_root(), SIGNING_DOMAIN) 
+        return BLS.sign(privkey, signing_data.hash_tree_root())
     ```
 
 3. The `signature` is placed in a `SignedRegistration` object with the BLS public key.
@@ -122,6 +138,7 @@ The proposer will register to the URC by submitting `Registration` messages for 
     class SignedRegistration(Container):
         pubkey: BLS.G1Point # note the encoding matches URC not beacon specs
         signature: BLS.G2Point # note the encoding matches URC not beacon specs
+        nonce: uint64
     ```
 
 #### **Signing and submitting a registration**
@@ -130,19 +147,20 @@ The proposer will repeat steps 2-3 for each BLS key they wish to register. Once 
 ```python
 def get_signed_registration(
     sigs: List[BLSSignature],
-    pubkeys: List[BLSPubkey]
+    pubkeys: List[BLSPubkey],
+    nonces: List[uint64]
 ) -> List[SignedRegistration]:
     # encode to BLS.G1Point and BLS.G2Point
     return [
-        SignedRegistration(to_g1_point(pk), to_g2_point(sig))
-        for pk, sig in zip(sigs, pubkeys)
+        SignedRegistration(to_g1_point(pk), to_g2_point(sig), nonce)
+        for pk, sig, nonce in zip(pubkeys, sigs, nonces)
     ]
 ```
 
 They will then submit them to the URC via the `register()` function.
 ```Solidity
-function register(SignedRegistration[] registrations, address owner)
-    external payable returns (bytes32 registrationRoot)
+function register(SignedRegistration[] registrations, address owner, Bytes32 signingId)
+    external payable returns (Bytes32 registrationRoot)
 ```
 
 The proposer is required to send at least `MIN_COLLATERAL` Ether (as defined in the URC) when calling `register()`. 
@@ -187,20 +205,27 @@ It is not required but is assumed that the `delegate` and `committer` private ke
     ```Python
     def get_delegation_signature(
         delegation: Delegation,
-        privkey: int
+        privkey: int,
+        signing_id: Bytes32,
+        nonce: uint64,
+        chainid: uint64
     ) -> SignedDelegation:
-        # note: abi-encoded, not SSZ
-        message = abi.encode(delegation)
-        signature = BLS.sign(message, privkey, DELEGATION_DOMAIN_SEPARATOR)
-        return SignedDelegation(message=delegation, signature=signature)
-    ```
+        # note the object root is abi-encoded, not SSZ
+        object_root = keccak256(abi.encode(IRegistry.MessageType.Delegation, delegation))
 
-    Note RLP encoding is used instead of SSZ for simpler on-chain verification.
+        # the rest is SSZ-encoded
+        comm_info = PropCommitSigningInfo(object_root, signing_id, to_little_endian_Bytes32(nonce), to_little_endian_Bytes32(chain_id))
+        signing_data = SigningData(comm_info.hash_tree_root(), SIGNING_DOMAIN) 
+        signature = BLS.sign(privkey, signing_data.hash_tree_root())
+        return SignedDelegation(message=delegation, nonce=nonce, signing_id=signing_id, signature=signature)
+    ```
 
 2. The `signature` is placed in a `SignedDelegation` object with the BLS public key.
     ```Python
     class SignedDelegation(Container):
         message: Delegation
+        nonce: uint64
+        signing_id: Bytes32
         signature: BLS.G2Point
     ```
 
@@ -228,7 +253,7 @@ The URC optionally allows an on-chain way for proposers to opt in to a proposer 
 #### **Updating the URC**
 The proposer will call the `optInToSlasher()` function in the URC with the `Slasher` contract address, `committer` address, and the `RegistrationRoot` from the URC registration step.
 ```Solidity
-function optInToSlasher(bytes32 registrationRoot, address slasher, address committer) external
+function optInToSlasher(Bytes32 registrationRoot, address slasher, address committer) external
 ```
 
 This function can only be called after the proposer has registered to the URC and the `FRAUD_PROOF_WINDOW` has elapsed.
@@ -251,14 +276,14 @@ Unregistering from the URC is a two-step process:
 The proposer's `owner` address in the URC can call `unregister()` to initiate the deregistration process, saving the block timestamp that it was called.
 
 ```Solidity
-function unregister(bytes32 registrationRoot) external;
+function unregister(Bytes32 registrationRoot) external;
 ```
 
 #### Calling `claimCollateral()`
 The `owner` address can call `claimCollateral()` to retrieve their collateral after `UNREGISTRATION_DELAY` seconds have elapsed. 
 
 ```Solidity
-function claimCollateral(bytes32 registrationRoot) external;
+function claimCollateral(Bytes32 registrationRoot) external;
 ```
 
 The proposer's collateral is transferred to their `owner` address.
@@ -268,7 +293,7 @@ The proposer's collateral is transferred to their `owner` address.
 If the proposer was slashed, the `owner` address can call `claimSlashedCollateral()` after `SLASH_WINDOW` seconds have elapsed to retrieve their remaining collateral.
 
 ```Solidity
-function claimSlashedCollateral(bytes32 registrationRoot) external;
+function claimSlashedCollateral(Bytes32 registrationRoot) external;
 ```
 
 The proposer's remaining collateral is transferred to the `owner` address.
@@ -277,7 +302,7 @@ The proposer's remaining collateral is transferred to the `owner` address.
 If a proposer previously opted in to a slasher contract [as described above](#opting-in-to-slasher-contracts-on-chain-optional), they can opt out by calling `optOutOfSlasher()` after `OPT_IN_DELAY` seconds have elapsed.
 
 ```Solidity
-function optOutOfSlasher(bytes32 registrationRoot, address slasher) external
+function optOutOfSlasher(Bytes32 registrationRoot, address slasher) external
 ```
 
 ## Slashing

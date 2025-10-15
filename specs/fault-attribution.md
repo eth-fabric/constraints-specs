@@ -70,14 +70,14 @@ Fault attribution is very dependent on the *completeness* of `SignedConstraints`
 The following modes serve as implementation guidance rather than prescriptive rules. From the perspective of the spec, these modes are indistinguishable—each simply represents a different strategy for leveraging the `ConstraintProofs` field. This is similar to how “optimistic relaying” emerged as an optimization within PBS: adopted in practice but not enshrined in the spec.
 
 ### Optimistic relaying
-This mode favors optimizes for performance over safety. By omitting heavy proof generation and verification, more time is available to build the block, potentially increasing the value of the block. However, this introduces the possibility that an invalid block is relayed to the Proposer, in which case the Builder should be penalized. The Proposer should decide whether to enable optimistic relaying, i.e., in their `Delegation.metadata` field.
+This mode optimizes for performance over safety. By omitting heavy proof generation and verification, more time is available to build the block, potentially increasing the value of the block. However, this introduces the possibility that an invalid block is relayed to the Proposer, in which case the Builder should be penalized. The Proposer should decide whether to enable optimistic relaying, i.e., in their `Delegation.metadata` field.
 1.	Gateway posts `SignedConstraints` to the Relay.
 2.	Builder constructs a block that satisfies all the constraints they received. In the `VersionedSubmitBlockRequestWithProofs.proofs` field, the Builder includes their signature over the `SignedContraints` object, effectively attesting that the block complies with the constraints they were given.
 3.	Relay includes the block in their auction if the Builder's signature is valid over the `SignedConstraints`.
 4.	Proposer receives the signed header and proposes the block.
 
 ### Pessimistic relaying
-Conversely, this mode favors optimizes for safety over performance. Builders are required to generate proofs of constraint satisfaction which comes with the associated compute costs. It is advised that this is the default setting that needs to be overriden by Proposers, i.e., in their `Delegation.metadata` field.
+Conversely, this mode optimizes for safety over performance. Builders are required to generate proofs of constraint satisfaction which comes with the associated compute costs. It is advised that this is the default setting that needs to be overriden by Proposers, i.e., in their `Delegation.metadata` field.
 1.	Gateway posts `SignedConstraints` to the Relay.
 2.	Builder constructs a block that satisfies all the constraints they received. The Builder includes proofs of constraint satisfaction in the `VersionedSubmitBlockRequestWithProofs.proofs` field.
 3.	Relay includes the block in their auction if the Builder's proofs are valid over the `SignedConstraints`.
