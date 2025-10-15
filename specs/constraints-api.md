@@ -236,7 +236,7 @@ Return the active delegations for the proposer of this slot, if they exist.
 
 ### Endpoint: `/constraints/v0/relay/constraints/{slot}`
 
-Returns all signed constraints for a given slot, if they exist. The request requires authorization via the `X-Receiver-Signature` header which is a BLS signature over the requested `slot` number. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`.
+Returns all signed constraints for a given slot, if they exist. The request requires authorization via the `X-Receiver-Signature` header which is a BLS signature over the requested `slot` number. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`. The `X-Receiver-Signature` will adhere to the [Commit-Boost Signing Spec](https://commit-boost.github.io/commit-boost-client/api/). 
 
 - **Method:** `GET`
 - **Response:** `SignedConstraints[]`
@@ -247,6 +247,8 @@ Returns all signed constraints for a given slot, if they exist. The request requ
     - `Content-Type: application/json`
     - `X-Receiver-Signature: <BLS signature>`
     - `X-Receiver-PublicKey: <BLS public key>`
+    - `X-Receiver-Nonce: <Nonce used for signature>`
+    - `X-Receiver-SigningId: <Signing ID used for signature>`
 
 - **Example Response**
     ```json

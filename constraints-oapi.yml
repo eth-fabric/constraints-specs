@@ -133,7 +133,7 @@ A proposer can delegate constraint submission rights by signing a Delegate messa
       tags:
         - Constraints API
       summary: "Endpoint to retrieve the signed constraints for a given slot"
-      description: "For a given slot, the Relay should only return signed constraints that were signed by the L1 proposer or a gateway that was delegated to by the proposer. The request requires authorization via the `X-Receiver-Signature` header which is a BLS signature over the requested `slot` number and the `X-Receiver-PublicKey` header which is the corresponding BLS public key. If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`.
+      description: "For a given slot, the Relay should only return signed constraints that were signed by the L1 proposer or a gateway that was delegated to by the proposer. The request requires authorization via the `X-Receiver-Signature` header which is a BLS signature over the requested `slot` number and the `X-Receiver-PublicKey` header which is the corresponding BLS public key. The `X-Receiver-Nonce` header is the nonce used for the signature and the `X-Receiver-SigningId` header is the signing ID used for the signature as part of the [Commit-Boost Signing Spec](https://commit-boost.github.io/commit-boost-client/api/). If there are restrictions on accessing constraints, the Relay will check the signature against the BLS public keys in `ConstraintsMessage.Receivers[]`.
       "
       parameters:
         - name: slot
@@ -151,6 +151,16 @@ A proposer can delegate constraint submission rights by signing a Delegate messa
           required: true
           schema:
               $ref: "./beacon-apis/types/primitive.yaml#/Pubkey"
+        - name: X-Receiver-Nonce
+          in: header
+          required: true
+          schema:
+              $ref: "./beacon-apis/types/primitive.yaml#/Uint64"
+        - name: X-Receiver-SigningId
+          in: header
+          required: true
+          schema:
+              $ref: "./beacon-apis/types/primitive.yaml#/Bytes32"
       responses:
         "200":
           description: "OK"
